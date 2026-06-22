@@ -95,9 +95,9 @@
   .filter-label { font-size:12px;color:var(--gray-400); }
   .ftag { padding:4px 12px;border-radius:99px;font-size:12px;border:1px solid var(--gray-200);cursor:pointer;background:white;color:var(--gray-400);font-family:inherit; }
   .ftag.on { font-weight:600; }
-  .ftag.all.on { background:var(--teal-50);color:var(--teal-800);border-color:var(--teal-400); }
+  .ftag.all.on { background:var(--purple-50);color:var(--purple-800);border-color:var(--purple-400); }
   .ftag.pending.on { background:var(--gray-100);color:var(--gray-700);border-color:var(--gray-400); }
-  .ftag.done.on { background:var(--purple-50);color:var(--purple-800);border-color:var(--purple-400); }
+  .ftag.done.on { background:var(--teal-50);color:var(--teal-800);border-color:var(--teal-400); }
   .cal-head { display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:4px; }
   .ch { text-align:center;font-size:11px;font-weight:600;color:var(--gray-400);padding:4px 0; }
   .ch.sun { color:var(--red-400); }
@@ -273,7 +273,7 @@
 
    <div class="legend">
     <div class="leg"><span class="leg-dot" style="background:#888780"></span>예정</div>
-    <div class="leg"><span class="leg-dot" style="background:#534AB7"></span>완료</div>
+    <div class="leg"><span class="leg-dot" style="background:#1D9E75"></span>완료</div>
     <div class="leg"><span class="leg-dot" style="background:#BA7517"></span>변경</div>
     <div class="leg"><span class="leg-dot" style="background:#E24B4A"></span>공지</div>
    </div>
@@ -283,7 +283,7 @@
 const DEFAULT_PW = '1224';
 const STATUS = {
   '예정': { bg:'#EDECEA', text:'#4A4945', dot:'#888780' },
-  '완료': { bg:'#EEEDFE', text:'#3C3489', dot:'#534AB7' },
+  '완료': { bg:'#E1F5EE', text:'#085041', dot:'#1D9E75' },
   '변경': { bg:'#FAEEDA', text:'#633806', dot:'#BA7517' },
 };
 const TIME_SHORT = { '점심시간':'점심', '하교시간':'하교', '비대면':'비대면', '':'방과후' };
@@ -597,10 +597,11 @@ function startDateEdit(id, el) {
   input.style.cssText = 'font-size:10px; border:1px solid var(--purple-400); border-radius:4px; padding:1px 3px; width:100%; font-family:inherit;';
   input.onclick = (ev) => ev.stopPropagation();
   input.onchange = async () => {
-    if (input.value) {
+    if (input.value && input.value !== evt.date) {
       evt.date = input.value;
+      if (evt.status === '예정') evt.status = '변경';
       await saveEvents();
-      toast(`날짜가 ${input.value}로 변경되었습니다.`);
+      toast(`날짜가 ${input.value}로 변경되었습니다. (상태: 변경)`);
     }
     buildCal();
   };
