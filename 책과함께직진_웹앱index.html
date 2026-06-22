@@ -1,0 +1,758 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>책과함께직진 — 진로독서 활동 일정</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- ===================================================================
+  Firebase 설정 안내
+  1) https://console.firebase.google.com 에서 새 프로젝트를 만드세요.
+  2) 왼쪽 메뉴에서 "Realtime Database" 를 추가하고, 보안 규칙은 "테스트 모드"로 시작하세요.
+  3) 프로젝트 설정(⚙️) > 일반 탭 > "내 앱" 에서 웹 앱(</>)을 추가하면
+     아래와 같은 firebaseConfig 객체를 받을 수 있습니다. 그 값을 아래에 그대로 붙여넣으세요.
+=================================================================== -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+  // ↓↓↓ 여기에 본인의 firebaseConfig 값을 붙여넣으세요 ↓↓↓
+  const firebaseConfig = {
+    apiKey: "AIzaSyBmEl7eb2BjIjYBQtVCbKeiVRY-4g0kE4o",
+    authDomain: "chaek-gwa-hamkke.firebaseapp.com",
+    databaseURL: "https://chaek-gwa-hamkke-default-rtdb.firebaseio.com",
+    projectId: "chaek-gwa-hamkke",
+    storageBucket: "chaek-gwa-hamkke.firebasestorage.app",
+    messagingSenderId: "967387128079",
+    appId: "1:967387128079:web:b0b97b15fb5cd6ccc79e7a"
+  };
+  // ↑↑↑ 여기까지 ↑↑↑
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  window.__fb = { ref, onValue, set, db };
+  window.__fbConfigUsed = firebaseConfig;
+  window.dispatchEvent(new Event('fb-ready'));
+</script>
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --purple-50:#EEEDFE;--purple-100:#CECBF6;--purple-400:#7F77DD;--purple-600:#534AB7;--purple-800:#3C3489;--purple-900:#26215C;
+    --teal-50:#E1F5EE;--teal-400:#1D9E75;--teal-800:#085041;
+    --amber-50:#FAEEDA;--amber-400:#BA7517;--amber-800:#633806;
+    --red-50:#FCEBEB;--red-400:#E24B4A;--red-800:#501313;
+    --gray-50:#F6F5F3;--gray-100:#EDECEA;--gray-200:#D4D2CC;--gray-400:#888780;--gray-700:#4A4945;--gray-900:#1A1917;
+  }
+  body { font-family:'Noto Sans KR',sans-serif; background:var(--gray-50); color:var(--gray-900); min-height:100vh; font-size:14px; line-height:1.6; }
+  header { background:var(--purple-900); color:white; padding:20px 24px 18px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; position:sticky; top:0; z-index:100; }
+  .header-brand { display:flex; align-items:center; gap:10px; }
+  .header-icon { width:36px;height:36px;background:var(--purple-400);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:18px; }
+  .header-title { font-size:17px;font-weight:600;letter-spacing:-0.3px; }
+  .header-sub { font-size:12px;color:var(--purple-100);margin-top:1px;display:flex;align-items:center;gap:6px; }
+  .sync-dot { width:6px;height:6px;border-radius:50%;background:#5CD68C;display:inline-block; }
+  .sync-dot.offline { background:#E24B4A; }
+  .sync-dot.syncing { background:#F2C572; }
+  .mode-toggle { display:flex;border:1px solid rgba(255,255,255,0.2);border-radius:99px;overflow:hidden; }
+  .mode-btn { padding:5px 14px;font-size:12px;border:none;background:transparent;cursor:pointer;color:rgba(255,255,255,0.65);font-family:inherit;transition:all 0.15s;white-space:nowrap; }
+  .mode-btn.active { background:var(--purple-400);color:white;font-weight:500; }
+  main { max-width:800px;margin:0 auto;padding:20px 16px 40px; }
+  #toast { position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--purple-900);color:white;font-size:13px;padding:10px 20px;border-radius:10px;display:none;z-index:999;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,0.2); }
+  #setupBanner { background:var(--red-50);border:1px solid var(--red-400);border-radius:8px;padding:14px 16px;margin-bottom:16px;font-size:13px;color:var(--red-800);line-height:1.6;display:none; }
+  #pwPanel { background:white;border:1px solid var(--gray-200);border-radius:10px;padding:16px 20px;margin-bottom:16px;display:none; }
+  .pw-row { display:flex;align-items:center;gap:8px;flex-wrap:wrap; }
+  .pw-row input { padding:7px 12px;font-size:13px;border:1px solid var(--gray-200);border-radius:6px;font-family:inherit;background:var(--gray-50);width:160px; }
+  .pw-row input:focus { outline:none;border-color:var(--purple-400); }
+  .pw-hint { font-size:11px;color:var(--gray-400);margin-top:6px; }
+  .pw-err { font-size:12px;color:var(--red-400); }
+  #adminPanel { background:white;border:1px solid var(--gray-200);border-radius:16px;padding:20px;margin-bottom:20px;display:none; }
+  #studentPanel { background:white;border:1px solid var(--gray-200);border-radius:16px;padding:20px;margin-bottom:20px;display:block; }
+  .panel-title { font-size:14px;font-weight:600;color:var(--purple-800);margin-bottom:14px;display:flex;align-items:center;gap:7px; }
+  .form-grid { display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px; }
+  .form-full { grid-column:1/-1; }
+  .field label { font-size:11px;color:var(--gray-400);display:block;margin-bottom:4px;font-weight:500; }
+  .field input,.field select { width:100%;padding:8px 10px;font-size:13px;border:1px solid var(--gray-200);border-radius:6px;font-family:inherit;background:var(--gray-50);color:var(--gray-900); }
+  .field input:focus,.field select:focus { outline:none;border-color:var(--purple-400);background:white; }
+  .btn-row { display:flex;gap:8px;justify-content:flex-end;margin-top:12px; }
+  .btn { padding:8px 18px;font-size:13px;border-radius:6px;border:1px solid var(--gray-200);background:white;color:var(--gray-700);cursor:pointer;font-family:inherit;font-weight:500; }
+  .btn:hover { background:var(--gray-50); }
+  .btn.primary { background:var(--purple-600);color:white;border-color:var(--purple-600); }
+  .btn.primary:hover { background:var(--purple-800); }
+  .btn:disabled { opacity:0.5;cursor:not-allowed; }
+  .divider { border:none;border-top:1px solid var(--gray-100);margin:16px 0; }
+  #statsRow { display:none;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px; }
+  .stat { background:white;border:1px solid var(--gray-100);border-radius:10px;padding:14px 16px; }
+  .stat-val { font-size:26px;font-weight:700;color:var(--purple-800); }
+  .stat-label { font-size:11px;color:var(--gray-400);margin-top:2px; }
+  .month-nav { display:flex;align-items:center;justify-content:space-between;margin-bottom:12px; }
+  .month-label { font-size:18px;font-weight:700;color:var(--gray-900); }
+  .nav-btns { display:flex;gap:6px;align-items:center; }
+  .nav-btn { padding:6px 12px;font-size:13px;border:1px solid var(--gray-200);border-radius:6px;background:white;color:var(--gray-700);cursor:pointer;font-family:inherit; }
+  .nav-btn:hover { background:var(--gray-50); }
+  .filter-row { display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;align-items:center; }
+  .filter-label { font-size:12px;color:var(--gray-400); }
+  .ftag { padding:4px 12px;border-radius:99px;font-size:12px;border:1px solid var(--gray-200);cursor:pointer;background:white;color:var(--gray-400);font-family:inherit; }
+  .ftag.on { font-weight:600; }
+  .ftag.all.on { background:var(--teal-50);color:var(--teal-800);border-color:var(--teal-400); }
+  .ftag.pending.on { background:var(--gray-100);color:var(--gray-700);border-color:var(--gray-400); }
+  .ftag.done.on { background:var(--purple-50);color:var(--purple-800);border-color:var(--purple-400); }
+  .cal-head { display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:4px; }
+  .ch { text-align:center;font-size:11px;font-weight:600;color:var(--gray-400);padding:4px 0; }
+  .ch.sun { color:var(--red-400); }
+  .ch.sat { color:#185FA5; }
+  .cal-grid { display:grid;grid-template-columns:repeat(7,1fr);gap:3px; }
+  .cell { min-height:90px;border:1px solid var(--gray-100);border-radius:6px;padding:5px 6px;background:white;overflow:hidden; }
+  .cell.empty { background:transparent;border-color:transparent; }
+  .cell.today { border:2px solid var(--purple-400); }
+  .cell.weekend { background:#FAFAF9; }
+  .dn { font-size:11px;color:var(--gray-400);margin-bottom:3px; }
+  .dn.sun { color:var(--red-400); }
+  .dn.sat { color:#185FA5; }
+  .today-circle { display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;background:var(--purple-600);color:white;border-radius:50%;font-size:10px;font-weight:700; }
+  .evt { font-size:10px;padding:2px 6px;border-radius:4px;margin-bottom:2px;display:flex;align-items:center;gap:3px;line-height:1.4; }
+  .admin-active .evt { cursor: pointer; }
+  .admin-active .evt:hover { filter: brightness(0.94); }
+  .evt-dot { width:5px;height:5px;border-radius:50%;flex-shrink:0; }
+  .evt-text { flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700; }
+  .evt-del { display:none;cursor:pointer;opacity:0.5;font-size:12px;line-height:1;flex-shrink:0; }
+  .evt-del:hover { opacity:1; }
+  .admin-active .evt-del { display:inline; }
+  .note-text { font-size:9px;color:var(--gray-400);display:block;margin-top:1px;line-height:1.3; }
+  .add-cell-btn { display:none;width:100%;margin-top:3px;padding:2px;font-size:10px;border:1px dashed var(--gray-200);border-radius:4px;background:transparent;cursor:pointer;color:var(--gray-400);font-family:inherit; }
+  .add-cell-btn:hover { background:var(--gray-50);color:var(--gray-700); }
+  .admin-active .add-cell-btn { display:block; }
+  .legend { display:flex;flex-wrap:wrap;gap:10px;margin-top:14px; }
+  .leg { display:flex;align-items:center;gap:5px;font-size:12px;color:var(--gray-400); }
+  .leg-dot { width:8px;height:8px;border-radius:50%; }
+  .notice-item { display:flex;align-items:center;justify-content:space-between;padding:6px 8px;background:var(--red-50);border-left:3px solid var(--red-400);margin-bottom:6px;border-radius:3px; }
+  .notice-item-text { font-size:11px;color:var(--gray-700);flex:1; }
+  .notice-item-date { font-size:10px;color:var(--gray-400);margin:0 8px; }
+  .notice-item-actions { display:flex;gap:4px; }
+  .notice-item-btn { font-size:11px;padding:2px 6px;border:none;background:transparent;cursor:pointer;color:var(--gray-400);font-family:inherit;border-radius:3px;transition:all 0.15s; }
+  .notice-item-btn:hover { background:rgba(0,0,0,0.1);color:var(--gray-700); }
+  @media(max-width:600px){
+    header{padding:14px 16px;} .header-title{font-size:15px;} main{padding:14px 10px 32px;}
+    .cell{min-height:64px;padding:3px;} .evt{font-size:9px;padding:1px 3px;} .form-grid{grid-template-columns:1fr;}
+    #statsRow{grid-template-columns:repeat(3,1fr);} .stat-val{font-size:20px;}
+  }
+</style>
+</head>
+<body>
+  <header>
+   <div class="header-brand">
+    <div class="header-icon">📚</div>
+    <div>
+     <div class="header-title">책과함께직진</div>
+     <div class="header-sub"><span class="sync-dot" id="syncDot"></span><span id="syncLabel">연결 중...</span></div>
+    </div>
+   </div>
+   <div class="mode-toggle">
+    <button class="mode-btn active" id="btnStudent">👁 학생 보기</button>
+    <button class="mode-btn" id="btnAdmin">🔒 관리자</button>
+   </div>
+  </header>
+  <main>
+   <div id="toast"></div>
+
+   <div id="setupBanner">
+    ⚠️ Firebase 설정이 아직 완료되지 않았습니다. 이 HTML 파일 상단의 <code>firebaseConfig</code> 값을
+    실제 Firebase 프로젝트 값으로 바꿔주세요. (Firebase 콘솔 → 프로젝트 설정 → 일반 → 내 앱)
+    그 전까지는 데이터가 저장되지 않고 새로고침하면 사라집니다.
+   </div>
+
+   <div id="pwPanel">
+    <div class="pw-row">
+     <input type="password" id="pwInput" placeholder="관리자 비밀번호 입력">
+     <button class="btn primary" id="btnPwOk">확인</button>
+     <button class="btn" id="btnPwCancel">취소</button>
+     <span class="pw-err" id="pwErr"></span>
+    </div>
+    <div class="pw-hint">초기 비밀번호: 1224</div>
+   </div>
+
+   <div id="studentPanel">
+    <div class="panel-title">📅 예정 일정 등록</div>
+    <div class="form-grid">
+     <div class="field"><label for="stuDate">날짜</label><input type="date" id="stuDate"></div>
+     <div class="field"><label for="stuTeam">팀 이름</label><input type="text" id="stuTeam" placeholder="예: 사과, 근육도서관"></div>
+     <div class="field form-full"><label for="stuTime">활동 시간</label>
+      <select id="stuTime">
+       <option value="">방과후</option>
+       <option value="점심시간">점심시간</option>
+       <option value="하교시간">하교시간</option>
+       <option value="비대면">비대면</option>
+      </select>
+     </div>
+    </div>
+    <div class="btn-row">
+     <button class="btn" id="btnStuClear">초기화</button>
+     <button class="btn primary" id="btnStuAdd">+ 일정 등록</button>
+    </div>
+    <div class="pw-hint" style="margin-top:10px;">※ 등록 후 날짜는 캘린더에서 일정을 더블클릭해 직접 수정할 수 있어요. 삭제나 완료 처리는 선생님만 가능합니다. 모든 변경사항은 실시간으로 모두에게 공유됩니다.</div>
+   </div>
+
+   <div id="adminPanel">
+    <div class="panel-title">📅 일정 추가</div>
+    <div class="form-grid">
+     <div class="field"><label for="evtDate">날짜</label><input type="date" id="evtDate"></div>
+     <div class="field"><label for="evtTeam">팀 이름</label><input type="text" id="evtTeam" placeholder="예: 사과, 근육도서관"></div>
+     <div class="field"><label for="evtTime">활동 시간</label>
+      <select id="evtTime">
+       <option value="">방과후</option>
+       <option value="점심시간">점심시간</option>
+       <option value="하교시간">하교시간</option>
+       <option value="비대면">비대면</option>
+      </select>
+     </div>
+     <div class="field"><label for="evtStatus">상태</label>
+      <select id="evtStatus">
+       <option value="예정">예정</option>
+       <option value="완료">완료</option>
+       <option value="변경">변경</option>
+      </select>
+     </div>
+     <div class="field form-full"><label for="evtNote">공지사항 (선택)</label><input type="text" id="evtNote" placeholder="예: 사서쌤 출장으로 방과후 불가"></div>
+    </div>
+    <div class="btn-row">
+     <button class="btn" id="btnClear">초기화</button>
+     <button class="btn primary" id="addBtn">+ 일정 추가</button>
+    </div>
+    <hr class="divider">
+    <div class="panel-title">📣 공지사항 관리</div>
+    <div class="form-grid">
+     <div class="field form-full"><label for="noticeText">공지사항 내용</label><input type="text" id="noticeText" placeholder="예: 사서쌤 출장으로 방과후 불가"></div>
+     <div class="field"><label for="noticeDate">적용 날짜</label><input type="date" id="noticeDate"></div>
+    </div>
+    <div class="btn-row">
+     <button class="btn" id="btnNoticeClear">초기화</button>
+     <button class="btn primary" id="btnNoticeAdd">+ 공지 추가</button>
+    </div>
+    <div style="margin-top:12px;max-height:200px;overflow-y:auto;border:1px solid var(--gray-200);border-radius:6px;padding:8px;">
+     <div id="noticeList" style="font-size:12px;"></div>
+    </div>
+    <hr class="divider">
+    <div style="font-size:12px;color:var(--gray-400);margin-bottom:8px;font-weight:500;">🔒 비밀번호 변경 (모두에게 공유됩니다)</div>
+    <div class="pw-row">
+     <input type="password" id="newPw1" placeholder="새 비밀번호" style="width:140px;">
+     <input type="password" id="newPw2" placeholder="확인" style="width:140px;">
+     <button class="btn" id="btnChangePw">변경</button>
+    </div>
+   </div>
+
+   <div id="statsRow">
+    <div class="stat"><div class="stat-val" id="sTot">0</div><div class="stat-label">이번 달 일정</div></div>
+    <div class="stat"><div class="stat-val" id="sDone">0</div><div class="stat-label">완료</div></div>
+    <div class="stat"><div class="stat-val" id="sPct">0%</div><div class="stat-label">완료율</div></div>
+   </div>
+
+   <div style="background:var(--teal-50);border:1px solid var(--teal-400);border-radius:6px;padding:8px 12px;font-size:13px;color:var(--gray-700);margin-bottom:16px;line-height:1.5;font-weight:700;">
+    💡 날짜 변경 방법 : <span style="color:var(--gray-700);">예정 일정</span>을 더블클릭 후 변경(완료된 일정은 변경 불가)
+   </div>
+
+   <div class="month-nav">
+    <div class="month-label" id="monthLabel"></div>
+    <div class="nav-btns">
+     <button class="nav-btn" id="btnPrevMonth">‹</button>
+     <button class="nav-btn" id="btnToday">오늘</button>
+     <button class="nav-btn" id="btnNextMonth">›</button>
+    </div>
+   </div>
+
+   <div class="filter-row">
+    <span class="filter-label">보기:</span>
+    <button class="ftag all on" data-filter="전체">전체</button>
+    <button class="ftag pending" data-filter="예정">예정</button>
+    <button class="ftag done" data-filter="완료">완료</button>
+   </div>
+
+   <div class="cal-head">
+    <div class="ch sun">일</div><div class="ch">월</div><div class="ch">화</div><div class="ch">수</div>
+    <div class="ch">목</div><div class="ch">금</div><div class="ch sat">토</div>
+   </div>
+   <div class="cal-grid" id="calGrid"></div>
+
+   <div class="legend">
+    <div class="leg"><span class="leg-dot" style="background:#888780"></span>예정</div>
+    <div class="leg"><span class="leg-dot" style="background:#534AB7"></span>완료</div>
+    <div class="leg"><span class="leg-dot" style="background:#BA7517"></span>변경</div>
+    <div class="leg"><span class="leg-dot" style="background:#E24B4A"></span>공지</div>
+   </div>
+  </main>
+
+<script>
+const DEFAULT_PW = '1224';
+const STATUS = {
+  '예정': { bg:'#EDECEA', text:'#4A4945', dot:'#888780' },
+  '완료': { bg:'#EEEDFE', text:'#3C3489', dot:'#534AB7' },
+  '변경': { bg:'#FAEEDA', text:'#633806', dot:'#BA7517' },
+};
+const TIME_SHORT = { '점심시간':'점심', '하교시간':'하교', '비대면':'비대면', '':'방과후' };
+const SEED_EVENTS = [{"id":1,"date":"2026-04-08","team":"서민","time":"비대면","status":"예정","note":""},{"id":2,"date":"2026-04-09","team":"근육도서관","time":"","status":"완료","note":""},{"id":3,"date":"2026-04-13","team":"근육도서관","time":"","status":"완료","note":""},{"id":4,"date":"2026-04-14","team":"안녕자두야","time":"","status":"완료","note":""},{"id":5,"date":"2026-04-15","team":"사과","time":"","status":"완료","note":""},{"id":6,"date":"2026-04-15","team":"우주최강연아주은","time":"","status":"완료","note":""},{"id":7,"date":"2026-04-15","team":"하퉤하","time":"","status":"완료","note":""},{"id":8,"date":"2026-04-16","team":"하퉤하","time":"점심시간","status":"예정","note":""},{"id":9,"date":"2026-04-17","team":"사과","time":"","status":"완료","note":""},{"id":10,"date":"2026-04-29","team":"좋은향기다우니","time":"","status":"완료","note":""},{"id":11,"date":"2026-04-30","team":"서민","time":"하교시간","status":"예정","note":""},{"id":12,"date":"2026-04-30","team":"이어봄","time":"점심시간","status":"예정","note":""},{"id":13,"date":"2026-04-30","team":"좋은향기다우니","time":"","status":"완료","note":""},{"id":14,"date":"2026-04-30","team":"더덕배도라지","time":"점심시간","status":"예정","note":""},{"id":15,"date":"2026-05-05","team":"서민","time":"비대면","status":"예정","note":""},{"id":16,"date":"2026-05-06","team":"우주최강연아주은","time":"비대면","status":"예정","note":""},{"id":17,"date":"2026-05-09","team":"더덕배도라지","time":"비대면","status":"예정","note":""},{"id":18,"date":"2026-05-11","team":"좋은향기다우니","time":"","status":"완료","note":""},{"id":19,"date":"2026-05-11","team":"더덕배도라지","time":"점심시간","status":"예정","note":""},{"id":20,"date":"2026-05-13","team":"우주최강연아주은","time":"","status":"완료","note":""},{"id":21,"date":"2026-05-13","team":"하퉤하","time":"","status":"완료","note":""},{"id":22,"date":"2026-05-13","team":"더덕배도라지","time":"","status":"완료","note":""},{"id":23,"date":"2026-05-14","team":"우주최강연아주은","time":"","status":"변경","note":""},{"id":24,"date":"2026-05-15","team":"더덕배도라지","time":"점심시간","status":"예정","note":""},{"id":25,"date":"2026-05-15","team":"안녕자두야","time":"점심시간","status":"예정","note":""},{"id":26,"date":"2026-05-15","team":"이어봄","time":"점심시간","status":"예정","note":""},{"id":27,"date":"2026-05-15","team":"서민","time":"","status":"완료","note":""},{"id":28,"date":"2026-05-18","team":"근육도서관","time":"","status":"완료","note":""},{"id":29,"date":"2026-05-19","team":"근육도서관","time":"","status":"완료","note":""},{"id":30,"date":"2026-05-19","team":"안녕자두야","time":"","status":"완료","note":""},{"id":31,"date":"2026-05-20","team":"좋은향기다우니","time":"","status":"완료","note":""},{"id":32,"date":"2026-05-20","team":"서민","time":"","status":"완료","note":""},{"id":33,"date":"2026-05-21","team":"사과","time":"","status":"완료","note":""},{"id":34,"date":"2026-05-21","team":"하퉤하","time":"","status":"완료","note":""},{"id":35,"date":"2026-05-22","team":"사과","time":"","status":"완료","note":""},{"id":36,"date":"2026-05-22","team":"더덕배도라지","time":"점심시간","status":"예정","note":""},{"id":37,"date":"2026-05-22","team":"안녕자두야","time":"점심시간","status":"예정","note":""},{"id":38,"date":"2026-05-22","team":"근육도서관","time":"","status":"완료","note":""},{"id":39,"date":"2026-05-22","team":"우주최강연아주은","time":"점심시간","status":"변경","note":""},{"id":40,"date":"2026-05-22","team":"야르킁킁","time":"","status":"완료","note":""},{"id":41,"date":"2026-05-25","team":"좋은향기다우니","time":"점심시간","status":"예정","note":""},{"id":42,"date":"2026-05-26","team":"사과","time":"","status":"완료","note":""},{"id":43,"date":"2026-05-26","team":"근육도서관","time":"","status":"완료","note":""},{"id":44,"date":"2026-05-26","team":"좋은향기다우니","time":"","status":"완료","note":""},{"id":45,"date":"2026-05-27","team":"좋은향기다우니","time":"점심시간","status":"예정","note":""},{"id":46,"date":"2026-05-27","team":"우주최강연아주은","time":"","status":"완료","note":""},{"id":47,"date":"2026-05-27","team":"서민","time":"","status":"예정","note":""},{"id":48,"date":"2026-05-28","team":"하퉤하","time":"","status":"완료","note":""},{"id":49,"date":"2026-05-28","team":"좋은향기다우니","time":"","status":"완료","note":""},{"id":50,"date":"2026-05-28","team":"야르킁킁","time":"","status":"완료","note":""},{"id":51,"date":"2026-05-29","team":"더덕배도라지","time":"점심시간","status":"예정","note":""},{"id":52,"date":"2026-05-29","team":"안녕자두야","time":"점심시간","status":"예정","note":""},{"id":53,"date":"2026-05-29","team":"이어봄","time":"점심시간","status":"예정","note":""},{"id":54,"date":"2026-05-29","team":"우주최강연아주은","time":"점심시간","status":"예정","note":""},{"id":55,"date":"2026-05-30","team":"하퉤하","time":"비대면","status":"예정","note":""},{"id":56,"date":"2026-06-01","team":"사과","time":"","status":"완료","note":""},{"id":57,"date":"2026-06-01","team":"야르킁킁","time":"","status":"완료","note":""},{"id":58,"date":"2026-06-01","team":"좋은향기다우니","time":"","status":"완료","note":""},{"id":59,"date":"2026-06-02","team":"안녕자두야","time":"","status":"완료","note":""},{"id":60,"date":"2026-06-03","team":"서민","time":"비대면","status":"예정","note":""},{"id":61,"date":"2026-06-05","team":"더덕배도라지","time":"점심시간","status":"예정","note":""},{"id":62,"date":"2026-06-05","team":"안녕자두야","time":"","status":"완료","note":""},{"id":63,"date":"2026-06-09","team":"근육도서관","time":"","status":"완료","note":""},{"id":64,"date":"2026-06-09","team":"좋은향기다우니","time":"","status":"완료","note":""},{"id":65,"date":"2026-06-09","team":"하퉤하","time":"","status":"완료","note":""},{"id":66,"date":"2026-06-09","team":"안녕자두야","time":"","status":"완료","note":""},{"id":67,"date":"2026-06-10","team":"우주최강연아주은","time":"점심시간","status":"예정","note":""},{"id":68,"date":"2026-06-10","team":"근육도서관","time":"","status":"완료","note":""},{"id":69,"date":"2026-06-10","team":"안녕자두야","time":"","status":"완료","note":""},{"id":70,"date":"2026-06-10","team":"더덕배도라지","time":"","status":"완료","note":""},{"id":71,"date":"2026-06-11","team":"좋은향기다우니","time":"점심시간","status":"예정","note":""},{"id":72,"date":"2026-06-11","team":"더덕배도라지","time":"","status":"완료","note":""},{"id":73,"date":"2026-06-12","team":"더덕배도라지","time":"점심시간","status":"예정","note":""},{"id":74,"date":"2026-06-12","team":"안녕자두야","time":"","status":"완료","note":""},{"id":75,"date":"2026-06-12","team":"이어봄","time":"점심시간","status":"예정","note":""},{"id":76,"date":"2026-06-12","team":"사과","time":"","status":"완료","note":""},{"id":77,"date":"2026-06-12","team":"근육도서관","time":"비대면","status":"예정","note":""},{"id":78,"date":"2026-06-15","team":"하퉤하","time":"점심시간","status":"예정","note":""},{"id":79,"date":"2026-06-16","team":"사과","time":"","status":"완료","note":""},{"id":80,"date":"2026-06-16","team":"서민","time":"","status":"완료","note":""},{"id":81,"date":"2026-06-18","team":"우주최강연아주은","time":"점심시간","status":"예정","note":""},{"id":82,"date":"2026-06-18","team":"안녕자두야","time":"","status":"완료","note":""},{"id":83,"date":"2026-06-19","team":"사과","time":"","status":"완료","note":""},{"id":84,"date":"2026-06-19","team":"더덕배도라지","time":"","status":"완료","note":""},{"id":85,"date":"2026-06-19","team":"하퉤하","time":"","status":"완료","note":""},{"id":86,"date":"2026-06-19","team":"우주최강연아주은","time":"","status":"완료","note":""},{"id":87,"date":"2026-06-19","team":"서민","time":"","status":"예정","note":""},{"id":88,"date":"2026-06-24","team":"우주최강연아주은","time":"점심시간","status":"예정","note":""},{"id":89,"date":"2026-06-26","team":"더덕배도라지","time":"점심시간","status":"예정","note":""},{"id":90,"date":"2026-06-26","team":"안녕자두야","time":"점심시간","status":"예정","note":""},{"id":91,"date":"2026-06-26","team":"이어봄","time":"점심시간","status":"예정","note":""},{"id":92,"date":"2026-07-08","team":"서민","time":"","status":"예정","note":""},{"id":93,"date":"2026-04-16","team":"","time":"","status":"","note":"3시 이후 사서쌤 출장"},{"id":94,"date":"2026-04-17","team":"","time":"","status":"","note":"방과후 사서쌤 출장"},{"id":95,"date":"2026-04-22","team":"","time":"","status":"","note":"방과후 사서쌤 출장"},{"id":96,"date":"2026-04-23","team":"","time":"","status":"","note":"시험"},{"id":97,"date":"2026-04-24","team":"","time":"","status":"","note":"시험"},{"id":98,"date":"2026-04-27","team":"","time":"","status":"","note":"시험"},{"id":99,"date":"2026-04-28","team":"","time":"","status":"","note":"시험"},{"id":100,"date":"2026-05-01","team":"","time":"","status":"","note":"재량휴업일"},{"id":101,"date":"2026-05-04","team":"","time":"","status":"","note":"재량휴업일"},{"id":102,"date":"2026-05-14","team":"","time":"","status":"","note":"사서쌤 출장으로 인해 방과후활동 불가"},{"id":103,"date":"2026-05-15","team":"","time":"","status":"","note":"사서쌤 출장으로 인해 4시 이후 불가"},{"id":104,"date":"2026-05-18","team":"","time":"","status":"","note":"사서쌤 출장으로 인해 방과후활동불가"},{"id":105,"date":"2026-05-19","team":"","time":"","status":"","note":"사서쌤 출장으로 인해 방과후활동불가"},{"id":106,"date":"2026-05-21","team":"","time":"","status":"","note":"사서쌤 출장으로 인해 방과후활동불가"},{"id":107,"date":"2026-05-28","team":"","time":"","status":"","note":"사서쌤 출장으로 인해 방과후 활동불가"},{"id":108,"date":"2026-06-03","team":"","time":"","status":"","note":"2026 지방선거"},{"id":109,"date":"2026-06-17","team":"","time":"","status":"","note":"사서쌤 종일 출장으로 인해 진로독서 불가"},{"id":110,"date":"2026-06-17","team":"","time":"","status":"","note":"우주최강연아주은 6월 18일로 일정 변경"},{"id":111,"date":"2026-07-02","team":"","time":"","status":"","note":"시험"},{"id":112,"date":"2026-07-03","team":"","time":"","status":"","note":"시험"},{"id":113,"date":"2026-07-06","team":"","time":"","status":"","note":"시험"},{"id":114,"date":"2026-07-07","team":"","time":"","status":"","note":"시험"}];
+
+let curYear = new Date().getFullYear();
+let curMonth = new Date().getMonth();
+let isAdmin = false;
+let filterStatus = '전체';
+let events = [];
+let notices = [];
+let adminPw = DEFAULT_PW;
+let fbReady = false;
+let isConfigured = true;
+
+function $(id) { return document.getElementById(id); }
+
+function setSyncStatus(state) {
+  const dot = $('syncDot'); const label = $('syncLabel');
+  dot.classList.remove('syncing', 'offline');
+  if (state === 'syncing') { dot.classList.add('syncing'); label.textContent = '동기화 중...'; }
+  else if (state === 'offline') { dot.classList.add('offline'); label.textContent = '연결 안 됨'; }
+  else { label.textContent = '실시간 공유 중'; }
+}
+
+function checkConfig() {
+  const cfgStr = JSON.stringify(window.__fbConfigUsed || {});
+  if (cfgStr.includes('YOUR_API_KEY') || cfgStr.includes('YOUR_PROJECT_ID')) {
+    isConfigured = false;
+    $('setupBanner').style.display = 'block';
+    setSyncStatus('offline');
+    events = SEED_EVENTS.slice();
+    notices = [];
+    buildCal();
+    return false;
+  }
+  return true;
+}
+
+function startRealtimeSync() {
+  const { ref, onValue, db } = window.__fb;
+
+  onValue(ref(db, 'events'), (snap) => {
+    const val = snap.val();
+    if (val) {
+      events = Object.values(val);
+    } else {
+      events = SEED_EVENTS.slice();
+      saveEvents();
+    }
+    buildCal();
+  }, () => setSyncStatus('offline'));
+
+  onValue(ref(db, 'notices'), (snap) => {
+    const val = snap.val();
+    notices = val ? Object.values(val) : [];
+    buildCal();
+    if (isAdmin) buildNoticeList();
+  }, () => setSyncStatus('offline'));
+
+  onValue(ref(db, 'adminPw'), (snap) => {
+    const val = snap.val();
+    if (val) adminPw = val;
+  });
+
+  setSyncStatus('online');
+}
+
+async function saveEvents() {
+  if (!isConfigured) { toast('Firebase 설정이 필요합니다. (관리자에게 문의)'); return; }
+  try {
+    const { ref, set, db } = window.__fb;
+    const obj = {};
+    events.forEach(e => { obj[e.id] = e; });
+    await set(ref(db, 'events'), obj);
+  } catch (e) { setSyncStatus('offline'); }
+}
+async function saveNotices() {
+  if (!isConfigured) { toast('Firebase 설정이 필요합니다. (관리자에게 문의)'); return; }
+  try {
+    const { ref, set, db } = window.__fb;
+    const obj = {};
+    notices.forEach(n => { obj[n.id] = n; });
+    await set(ref(db, 'notices'), obj);
+  } catch (e) { setSyncStatus('offline'); }
+}
+async function savePw(pw) {
+  if (!isConfigured) return;
+  try {
+    const { ref, set, db } = window.__fb;
+    await set(ref(db, 'adminPw'), pw);
+  } catch (e) {}
+}
+
+function tryAdmin() { $('pwPanel').style.display = 'block'; $('pwInput').focus(); }
+function cancelAdmin() { $('pwPanel').style.display = 'none'; $('pwErr').textContent = ''; $('pwInput').value = ''; }
+
+function checkPw() {
+  if ($('pwInput').value === adminPw) {
+    isAdmin = true;
+    $('pwPanel').style.display = 'none';
+    $('pwInput').value = '';
+    $('btnAdmin').classList.add('active');
+    $('btnStudent').classList.remove('active');
+    $('adminPanel').style.display = 'block';
+    $('studentPanel').style.display = 'none';
+    $('statsRow').style.display = 'grid';
+    document.body.classList.add('admin-active');
+    setDefaultDate();
+    clearNoticeForm();
+    buildNoticeList();
+    buildCal();
+    toast('관리자 모드로 전환되었습니다.');
+  } else {
+    $('pwErr').textContent = '비밀번호가 틀렸습니다.';
+  }
+}
+
+function setMode(m) {
+  if (m === 'student') {
+    isAdmin = false;
+    $('btnStudent').classList.add('active');
+    $('btnAdmin').classList.remove('active');
+    $('adminPanel').style.display = 'none';
+    $('studentPanel').style.display = 'block';
+    $('statsRow').style.display = 'none';
+    $('pwPanel').style.display = 'none';
+    document.body.classList.remove('admin-active');
+    setDefaultStudentDate();
+    buildCal();
+  }
+}
+
+async function changePw() {
+  const a = $('newPw1').value.trim();
+  const b = $('newPw2').value.trim();
+  if (!a) { toast('새 비밀번호를 입력하세요.'); return; }
+  if (a !== b) { toast('비밀번호가 일치하지 않습니다.'); return; }
+  adminPw = a;
+  await savePw(a);
+  $('newPw1').value = ''; $('newPw2').value = '';
+  toast('비밀번호가 변경되었습니다. (모두에게 공유됩니다)');
+}
+
+function setDefaultDate() {
+  const t = new Date();
+  $('evtDate').value = `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`;
+}
+function setDefaultStudentDate() {
+  const t = new Date();
+  const el = $('stuDate');
+  if (el) el.value = `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`;
+}
+function clearStudentForm() {
+  setDefaultStudentDate();
+  $('stuTeam').value = '';
+  $('stuTime').value = '';
+}
+
+async function addStudentEvent() {
+  const date = $('stuDate').value;
+  const team = $('stuTeam').value.trim();
+  const time = $('stuTime').value;
+  if (!date) { toast('날짜를 선택하세요.'); return; }
+  if (!team) { toast('팀 이름을 입력하세요.'); return; }
+  events.push({ id: Date.now(), date, team, time, status: '예정', note: '' });
+  await saveEvents();
+  buildCal();
+  toast(`${date} 일정이 등록되었습니다.`);
+  $('stuTeam').value = '';
+  $('stuTime').value = '';
+}
+
+function clearForm() {
+  setDefaultDate();
+  $('evtTeam').value = '';
+  $('evtNote').value = '';
+  $('evtTime').value = '';
+  $('evtStatus').value = '예정';
+  $('addBtn').textContent = '+ 일정 추가';
+  $('addBtn').onclick = addEvent;
+}
+
+function clearNoticeForm() {
+  const t = new Date();
+  $('noticeDate').value = `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`;
+  $('noticeText').value = '';
+}
+
+async function addEvent() {
+  const date = $('evtDate').value;
+  const team = $('evtTeam').value.trim();
+  const time = $('evtTime').value;
+  const status = $('evtStatus').value;
+  const note = $('evtNote').value.trim();
+  if (!date) { toast('날짜를 선택하세요.'); return; }
+  if (!team && !note) { toast('팀 이름 또는 공지사항을 입력하세요.'); return; }
+  events.push({ id: Date.now(), date, team, time, status, note });
+  await saveEvents();
+  buildCal();
+  toast(`${date} 일정이 추가되었습니다.`);
+  clearForm();
+}
+
+async function saveEventEdit(id) {
+  const date = $('evtDate').value;
+  const team = $('evtTeam').value.trim();
+  const time = $('evtTime').value;
+  const status = $('evtStatus').value;
+  const note = $('evtNote').value.trim();
+  if (!date) { toast('날짜를 선택하세요.'); return; }
+  if (!team && !note) { toast('팀 이름 또는 공지사항을 입력하세요.'); return; }
+  const evt = events.find(e => e.id === id);
+  if (!evt) return;
+  evt.date = date; evt.team = team; evt.time = time; evt.status = status; evt.note = note;
+  await saveEvents();
+  buildCal();
+  toast('일정이 수정되었습니다.');
+  clearForm();
+}
+
+async function deleteEvent(id) {
+  events = events.filter(e => e.id !== id);
+  await saveEvents();
+  buildCal();
+}
+
+async function addNotice() {
+  const text = $('noticeText').value.trim();
+  const date = $('noticeDate').value;
+  if (!text) { toast('공지사항 내용을 입력하세요.'); return; }
+  if (!date) { toast('날짜를 선택하세요.'); return; }
+  notices.push({ id: Date.now(), date, text });
+  await saveNotices();
+  buildCal(); buildNoticeList();
+  toast(`${date} 공지가 추가되었습니다.`);
+  clearNoticeForm();
+}
+
+async function deleteNotice(id) {
+  notices = notices.filter(n => n.id !== id);
+  await saveNotices();
+  buildCal(); buildNoticeList();
+}
+
+async function editNotice(id) {
+  const notice = notices.find(n => n.id === id);
+  if (!notice) return;
+  const newText = prompt('공지사항을 수정하세요:', notice.text);
+  if (newText === null) return;
+  if (!newText.trim()) { toast('공지사항 내용은 비워둘 수 없습니다.'); return; }
+  notice.text = newText.trim();
+  await saveNotices();
+  buildCal(); buildNoticeList();
+  toast('공지가 수정되었습니다.');
+}
+
+function buildNoticeList() {
+  const list = $('noticeList');
+  list.innerHTML = '';
+  if (notices.length === 0) {
+    list.innerHTML = '<div style="color:var(--gray-400);padding:8px;">등록된 공지사항이 없습니다.</div>';
+    return;
+  }
+  notices.forEach(n => {
+    const item = document.createElement('div');
+    item.className = 'notice-item';
+    const span1 = document.createElement('span'); span1.className = 'notice-item-text'; span1.textContent = n.text;
+    const span2 = document.createElement('span'); span2.className = 'notice-item-date'; span2.textContent = n.date;
+    const actions = document.createElement('div'); actions.className = 'notice-item-actions';
+    const editBtn = document.createElement('button'); editBtn.className = 'notice-item-btn'; editBtn.textContent = '수정'; editBtn.onclick = () => editNotice(n.id);
+    const delBtn = document.createElement('button'); delBtn.className = 'notice-item-btn'; delBtn.textContent = '삭제'; delBtn.onclick = () => deleteNotice(n.id);
+    actions.appendChild(editBtn); actions.appendChild(delBtn);
+    item.appendChild(span1); item.appendChild(span2); item.appendChild(actions);
+    list.appendChild(item);
+  });
+}
+
+async function toggleDone(id) {
+  if (!isAdmin) return;
+  const evt = events.find(e => e.id === id);
+  if (!evt) return;
+  evt.status = (evt.status === '완료') ? '예정' : '완료';
+  await saveEvents();
+  buildCal();
+  toast(evt.status === '완료' ? `${evt.team} 완료로 변경되었습니다.` : `${evt.team} 예정으로 되돌렸습니다.`);
+}
+
+function startEventEdit(id) {
+  const evt = events.find(e => e.id === id);
+  if (!evt || !evt.team) return;
+  $('evtDate').value = evt.date;
+  $('evtTeam').value = evt.team;
+  $('evtTime').value = evt.time || '';
+  $('evtStatus').value = evt.status;
+  $('evtNote').value = evt.note || '';
+  $('addBtn').textContent = '✓ 일정 수정';
+  $('addBtn').onclick = () => saveEventEdit(id);
+  $('adminPanel').scrollIntoView({ behavior: 'smooth' });
+}
+
+function startDateEdit(id, el) {
+  const evt = events.find(e => e.id === id);
+  if (!evt) return;
+  if (evt.status === '완료') { toast('완료된 일정의 날짜는 선생님만 수정할 수 있어요.'); return; }
+  el.innerHTML = '';
+  el.style.padding = '2px 4px';
+  const input = document.createElement('input');
+  input.type = 'date';
+  input.value = evt.date;
+  input.style.cssText = 'font-size:10px; border:1px solid var(--purple-400); border-radius:4px; padding:1px 3px; width:100%; font-family:inherit;';
+  input.onclick = (ev) => ev.stopPropagation();
+  input.onchange = async () => {
+    if (input.value) {
+      evt.date = input.value;
+      await saveEvents();
+      toast(`날짜가 ${input.value}로 변경되었습니다.`);
+    }
+    buildCal();
+  };
+  input.onblur = () => buildCal();
+  el.appendChild(input);
+  input.focus();
+}
+
+function setFilter(s, el) {
+  filterStatus = s;
+  document.querySelectorAll('.ftag').forEach(t => t.classList.remove('on'));
+  el.classList.add('on');
+  buildCal();
+}
+
+function changeMonth(d) {
+  curMonth += d;
+  if (curMonth < 0) { curMonth = 11; curYear--; }
+  if (curMonth > 11) { curMonth = 0; curYear++; }
+  buildCal();
+}
+function goToday() { const t = new Date(); curYear = t.getFullYear(); curMonth = t.getMonth(); buildCal(); }
+
+function toast(msg) {
+  const el = $('toast');
+  el.textContent = msg; el.style.display = 'block';
+  setTimeout(() => { el.style.display = 'none'; }, 2500);
+}
+
+function buildStats() {
+  const ms = `${curYear}-${String(curMonth+1).padStart(2,'0')}`;
+  const me = events.filter(e => e.date.startsWith(ms) && e.team);
+  const total = me.length, done = me.filter(e => e.status === '완료').length;
+  $('sTot').textContent = total;
+  $('sDone').textContent = done;
+  $('sPct').textContent = total ? Math.round(done / total * 100) + '%' : '0%';
+}
+
+function buildCal() {
+  if (isAdmin) buildStats();
+  $('monthLabel').textContent = `${curYear}년 ${curMonth+1}월`;
+  const grid = $('calGrid');
+  grid.innerHTML = '';
+  const today = new Date();
+  const firstDay = new Date(curYear, curMonth, 1).getDay();
+  const lastDate = new Date(curYear, curMonth+1, 0).getDate();
+  const ms = `${curYear}-${String(curMonth+1).padStart(2,'0')}`;
+
+  for (let i = 0; i < firstDay; i++) {
+    const c = document.createElement('div'); c.className = 'cell empty'; grid.appendChild(c);
+  }
+  for (let d = 1; d <= lastDate; d++) {
+    const dow = (firstDay + d - 1) % 7;
+    const isToday = today.getFullYear() === curYear && today.getMonth() === curMonth && today.getDate() === d;
+    const dateStr = `${ms}-${String(d).padStart(2,'0')}`;
+    const dayEvts = events.filter(e => e.date === dateStr && (filterStatus === '전체' || e.status === filterStatus || !e.team));
+    const dayNotices = notices.filter(n => n.date === dateStr);
+    const allItems = [...dayEvts, ...dayNotices];
+
+    const cell = document.createElement('div');
+    cell.className = 'cell' + (isToday ? ' today' : '') + (dow === 0 || dow === 6 ? ' weekend' : '');
+
+    const dn = document.createElement('div');
+    dn.className = 'dn' + (dow === 0 ? ' sun' : dow === 6 ? ' sat' : '');
+    if (isToday) { const s = document.createElement('span'); s.className = 'today-circle'; s.textContent = d; dn.appendChild(s); }
+    else { dn.textContent = d; }
+    cell.appendChild(dn);
+
+    allItems.forEach(item => {
+      if (item.team !== undefined) {
+        const evt = item;
+        if (evt.note && !evt.team) {
+          const nb = document.createElement('span'); nb.className = 'note-text'; nb.style.cssText = 'font-size:9px;color:#E24B4A;display:block;margin-top:2px;font-weight:600;'; nb.textContent = '⚠ ' + evt.note; cell.appendChild(nb);
+          if (isAdmin) { const db = document.createElement('span'); db.style.cssText = 'font-size:9px;color:#aaa;cursor:pointer;display:block;'; db.textContent = '삭제'; db.onclick = () => deleteEvent(evt.id); cell.appendChild(db); }
+          return;
+        }
+        const c = STATUS[evt.status] || STATUS['예정'];
+        const el = document.createElement('div'); el.className = 'evt';
+        el.style.background = c.bg; el.style.color = c.text;
+        const dot = document.createElement('span'); dot.className = 'evt-dot'; dot.style.background = c.dot;
+        const lbl = document.createElement('span'); lbl.className = 'evt-text';
+        let lt = evt.team; lt += `(${TIME_SHORT[evt.time] || evt.time || '방과후'})`; lbl.textContent = lt;
+        lbl.title = lt + ' · ' + evt.status + (isAdmin ? ' (클릭하여 완료/예정 전환)' : ' (더블클릭하여 날짜 수정)');
+        if (isAdmin) { el.onclick = () => startEventEdit(evt.id); }
+        else { el.ondblclick = () => startDateEdit(evt.id, el); }
+        const del = document.createElement('span'); del.className = 'evt-del'; del.textContent = '✕';
+        del.onclick = (ev) => { ev.stopPropagation(); deleteEvent(evt.id); };
+        el.appendChild(dot); el.appendChild(lbl); el.appendChild(del);
+        cell.appendChild(el);
+        if (evt.note) { const nb = document.createElement('span'); nb.className = 'note-text'; nb.textContent = evt.note; cell.appendChild(nb); }
+      } else {
+        const notice = item;
+        const nb = document.createElement('span'); nb.className = 'note-text'; nb.style.cssText = 'font-size:9px;color:#E24B4A;display:block;margin-top:2px;font-weight:600;'; nb.textContent = '📌 ' + notice.text; cell.appendChild(nb);
+      }
+    });
+
+    if (isAdmin) {
+      const ab = document.createElement('button'); ab.className = 'add-cell-btn'; ab.textContent = '+ 추가';
+      ab.onclick = () => { $('evtDate').value = dateStr; $('adminPanel').scrollIntoView({ behavior: 'smooth' }); $('evtTeam').focus(); };
+      cell.appendChild(ab);
+    }
+    grid.appendChild(cell);
+  }
+}
+
+function bindEvents() {
+  $('btnStudent').onclick = () => setMode('student');
+  $('btnAdmin').onclick = () => tryAdmin();
+  $('btnPwOk').onclick = () => checkPw();
+  $('btnPwCancel').onclick = () => cancelAdmin();
+  $('pwInput').onkeydown = (e) => { if (e.key === 'Enter') checkPw(); };
+  $('btnStuClear').onclick = () => clearStudentForm();
+  $('btnStuAdd').onclick = () => addStudentEvent();
+  $('btnClear').onclick = () => clearForm();
+  $('addBtn').onclick = () => addEvent();
+  $('btnNoticeClear').onclick = () => clearNoticeForm();
+  $('btnNoticeAdd').onclick = () => addNotice();
+  $('btnChangePw').onclick = () => changePw();
+  $('btnPrevMonth').onclick = () => changeMonth(-1);
+  $('btnToday').onclick = () => goToday();
+  $('btnNextMonth').onclick = () => changeMonth(1);
+  document.querySelectorAll('.ftag').forEach(btn => {
+    btn.addEventListener('click', () => setFilter(btn.dataset.filter, btn));
+  });
+}
+
+function init() {
+  bindEvents();
+  setDefaultStudentDate();
+  setDefaultDate();
+
+  window.addEventListener('fb-ready', () => {
+    fbReady = true;
+    if (checkConfig()) {
+      startRealtimeSync();
+    }
+  });
+
+  // Firebase 모듈 스크립트가 늦게 로드될 수 있으므로 약간의 지연 후 설정값 확인
+  setTimeout(() => {
+    if (!fbReady) {
+      // fb-ready 이벤트가 안 왔다면 config 자체가 비어있거나 오류
+      checkConfig();
+    }
+  }, 1500);
+
+  buildCal();
+}
+
+init();
+</script>
+</body>
+</html>
