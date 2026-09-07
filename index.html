@@ -1022,18 +1022,18 @@ function renderTeamSchedule(teamName) {
 function updateTeamFilterOptions() {
   const sel = $('teamFilter');
   if (!sel) return;
-  const evtTeams = Array.from(new Set(events.filter(e => e.team).map(e => e.team))).sort();
+  const recentTeams = teams.slice().reverse();
   const prevValue = sel.value || filterTeam;
   sel.innerHTML = '';
   const allOpt = document.createElement('option');
   allOpt.value = '전체팀'; allOpt.textContent = '팀 전체';
   sel.appendChild(allOpt);
-  evtTeams.forEach(t => {
+  recentTeams.forEach(t => {
     const opt = document.createElement('option');
     opt.value = t; opt.textContent = t;
     sel.appendChild(opt);
   });
-  if (evtTeams.includes(prevValue) || prevValue === '전체팀') {
+  if (recentTeams.includes(prevValue) || prevValue === '전체팀') {
     sel.value = prevValue;
     filterTeam = prevValue;
   } else {
