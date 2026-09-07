@@ -150,7 +150,7 @@
    </div>
    <div class="mode-toggle">
     <button class="mode-btn active" id="btnStudent">👁 학생 보기</button>
-    <button class="mode-btn" id="btnAdmin">🔒 관리자</button>
+    <button class="mode-btn" id="btnAdmin" style="display:none;">🔒 관리자</button>
    </div>
   </header>
   <main>
@@ -901,6 +901,12 @@ function init() {
   bindEvents();
   setDefaultStudentDate();
   setDefaultDate();
+
+  // URL에 ?admin=true 가 있을 때만 관리자 버튼 표시
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('admin') === 'true') {
+    $('btnAdmin').style.display = 'block';
+  }
 
   window.addEventListener('fb-ready', () => {
     fbReady = true;
