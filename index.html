@@ -172,7 +172,21 @@
    </div>
 
    <div id="studentPanel">
-    <div class="panel-title">📅 예정 일정 확인</div>
+    <!-- 일정 확인 섹션 -->
+    <div class="panel-title">🔍 팀 일정 확인</div>
+    <div class="form-grid">
+     <div class="field form-full"><label for="searchTeam">팀 이름 선택</label>
+      <select id="searchTeam" style="width:100%;padding:8px 10px;font-size:13px;border:1px solid var(--gray-200);border-radius:6px;font-family:inherit;background:var(--gray-50);color:var(--gray-900);">
+       <option value="">팀을 선택하세요</option>
+      </select>
+     </div>
+    </div>
+    <div id="teamScheduleResult" style="margin-top:8px;"></div>
+
+    <hr style="border:none;border-top:1px solid var(--gray-100);margin:16px 0;">
+
+    <!-- 일정 등록 섹션 -->
+    <div class="panel-title">📅 예정 일정 등록</div>
     <div class="form-grid">
      <div class="field"><label for="stuDate">날짜</label><input type="date" id="stuDate"></div>
      <div class="field"><label for="stuTeam">팀 이름</label>
@@ -189,10 +203,9 @@
      </div>
     </div>
     <div class="btn-row">
-     <button class="btn" id="btnStuClear">초기화</button>
      <button class="btn primary" id="btnStuAdd">+ 일정 등록</button>
     </div>
-    <div class="pw-hint" style="margin-top:10px;">※ 등록 후 날짜는 캘린더에서 일정을 더블클릭해 직접 수정할 수 있어요. 삭제나 완료 처리는 선생님만 가능합니다. 모든 변경사항은 실시간으로 모두에게 공유됩니다.</div>
+    <div class="pw-hint" style="margin-top:10px;">※ 등록 후 날짜는 캘린더에서 일정을 더블클릭해 직접 수정할 수 있어요. 삭제나 완료 처리는 선생님만 가능합니다.</div>
    </div>
 
    <div id="adminPanel">
@@ -480,7 +493,7 @@ function setDefaultStudentDate() {
 function clearStudentForm() {
   setDefaultStudentDate();
   $('stuTeam').value = '';
-  $('stuTime').value = '';
+  $('stuTime').value = '점심시간';
 }
 
 async function addStudentEvent() {
@@ -494,14 +507,14 @@ async function addStudentEvent() {
   buildCal();
   toast(`${date} 일정이 등록되었습니다.`);
   $('stuTeam').value = '';
-  $('stuTime').value = '';
+  $('stuTime').value = '점심시간';
 }
 
 function clearForm() {
   setDefaultDate();
   $('evtTeam').value = '';
   $('evtNote').value = '';
-  $('evtTime').value = '';
+  $('evtTime').value = '점심시간';
   $('evtStatus').value = '예정';
   $('addBtn').textContent = '+ 일정 추가';
   $('addBtn').onclick = addEvent;
@@ -671,6 +684,7 @@ function buildTeamList() {
 function updateTeamSelects() {
   const stuSel = $('stuTeam');
   const evtSel = $('evtTeam');
+  const searchSel = $('searchTeam');
   const sortedTeams = teams.slice().sort();
 
   if (stuSel) {
@@ -690,6 +704,16 @@ function updateTeamSelects() {
       evtSel.appendChild(opt);
     });
     if (sortedTeams.includes(prev)) evtSel.value = prev;
+  }
+  if (searchSel) {
+    const prev = searchSel.value;
+    searchSel.innerHTML = '<option value="">팀을 선택하세요</option>';
+    sortedTeams.forEach(t => {
+      const opt = document.createElement('option'); opt.value = t; opt.textContent = t;
+      searchSel.appendChild(opt);
+    });
+    if (sortedTeams.includes(prev)) { searchSel.value = prev; renderTeamSchedule(prev); }
+    else { searchSel.value = ''; renderTeamSchedule(''); }
   }
 }
 
@@ -753,22 +777,51 @@ function setTeamFilter(t) {
   buildCal();
 }
 
+function renderTeamSchedule(teamName) {
+  const result = $('teamScheduleResult');
+  if (!result) return;
+  if (!teamName) { result.innerHTML = ''; return; }
+  const teamEvts = events.filter(e => e.team === teamName).sort((a, b) => a.date.localeCompare(b.date));
+  if (teamEvts.length === 0) {
+    result.innerHTML = `<div style="color:var(--gray-400);font-size:12px;padding:8px 0;">등록된 일정이 없습니다.</div>`;
+    return;
+  }
+  const STATUS_LABEL = { '예정': '예정', '완료': '완료', '변경': '변경' };
+  const STATUS_COLOR = { '예정': '#888780', '완료': '#1D9E75', '변경': '#BA7517' };
+  const TIME_LABEL = { '점심시간': '점심', '하교시간': '하교', '비대면': '비대면', '': '방과후' };
+  let html = `<div style="border:1px solid var(--gray-200);border-radius:8px;overflow:hidden;margin-top:4px;">`;
+  html += `<div style="background:var(--purple-50);padding:8px 12px;font-size:12px;font-weight:600;color:var(--purple-800);">📋 ${teamName} 팀 일정 (${teamEvts.length}건)</div>`;
+  teamEvts.forEach((evt, idx) => {
+    const bg = idx % 2 === 0 ? 'white' : 'var(--gray-50)';
+    const dot = STATUS_COLOR[evt.status] || '#888780';
+    const statusLabel = STATUS_LABEL[evt.status] || evt.status;
+    const timeLabel = TIME_LABEL[evt.time] !== undefined ? TIME_LABEL[evt.time] : evt.time;
+    html += `<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:${bg};font-size:12px;border-top:1px solid var(--gray-100);">`;
+    html += `<span style="width:8px;height:8px;border-radius:50%;background:${dot};flex-shrink:0;display:inline-block;"></span>`;
+    html += `<span style="flex:1;color:var(--gray-900);font-weight:600;">${evt.date}</span>`;
+    html += `<span style="color:var(--gray-400);">${timeLabel}</span>`;
+    html += `<span style="padding:2px 8px;border-radius:99px;font-size:11px;background:${dot}22;color:${dot};font-weight:600;">${statusLabel}</span>`;
+    html += `</div>`;
+  });
+  html += `</div>`;
+  result.innerHTML = html;
+}
+
 function updateTeamFilterOptions() {
   const sel = $('teamFilter');
   if (!sel) return;
-  const teams = Array.from(new Set(events.filter(e => e.team).map(e => e.team))).sort();
+  const evtTeams = Array.from(new Set(events.filter(e => e.team).map(e => e.team))).sort();
   const prevValue = sel.value || filterTeam;
   sel.innerHTML = '';
   const allOpt = document.createElement('option');
   allOpt.value = '전체팀'; allOpt.textContent = '팀 전체';
   sel.appendChild(allOpt);
-  teams.forEach(t => {
+  evtTeams.forEach(t => {
     const opt = document.createElement('option');
     opt.value = t; opt.textContent = t;
     sel.appendChild(opt);
   });
-  // 이전에 선택했던 팀이 여전히 목록에 있으면 유지
-  if (teams.includes(prevValue) || prevValue === '전체팀') {
+  if (evtTeams.includes(prevValue) || prevValue === '전체팀') {
     sel.value = prevValue;
     filterTeam = prevValue;
   } else {
@@ -802,6 +855,8 @@ function buildStats() {
 
 function buildCal() {
   updateTeamFilterOptions();
+  const searchSel = $('searchTeam');
+  if (searchSel && searchSel.value) renderTeamSchedule(searchSel.value);
   if (isAdmin) buildStats();
   $('monthLabel').textContent = `${curYear}년 ${curMonth+1}월`;
   const grid = $('calGrid');
@@ -874,8 +929,8 @@ function bindEvents() {
   $('btnPwOk').onclick = () => checkPw();
   $('btnPwCancel').onclick = () => cancelAdmin();
   $('pwInput').onkeydown = (e) => { if (e.key === 'Enter') checkPw(); };
-  $('btnStuClear').onclick = () => clearStudentForm();
   $('btnStuAdd').onclick = () => addStudentEvent();
+  $('searchTeam').addEventListener('change', (e) => renderTeamSchedule(e.target.value));
   $('btnClear').onclick = () => clearForm();
   $('addBtn').onclick = () => addEvent();
   $('btnNoticeClear').onclick = () => clearNoticeForm();
