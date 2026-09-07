@@ -132,6 +132,30 @@
   .notice-item-actions { display:flex;gap:4px; }
   .notice-item-btn { font-size:11px;padding:2px 6px;border:none;background:transparent;cursor:pointer;color:var(--gray-400);font-family:inherit;border-radius:3px;transition:all 0.15s; }
   .notice-item-btn:hover { background:rgba(0,0,0,0.1);color:var(--gray-700); }
+  /* 날짜 일정 팝업 (학생용) */
+  #dayModal { display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:500;align-items:flex-end;justify-content:center; }
+  #dayModal.open { display:flex; }
+  #dayModalBox { background:white;border-radius:16px 16px 0 0;padding:20px;width:min(480px,100vw);max-height:80vh;overflow-y:auto;box-shadow:0 -4px 24px rgba(0,0,0,0.15); }
+  #dayModal .day-modal-title { font-size:15px;font-weight:700;color:var(--purple-900);margin-bottom:14px;display:flex;align-items:center;justify-content:space-between; }
+  #dayModal .close-btn { font-size:20px;cursor:pointer;color:var(--gray-400);line-height:1;padding:2px 8px;border:none;background:none;font-family:inherit; }
+  #dayModal .day-evt-item { display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:10px;margin-bottom:8px;background:var(--gray-50);border:1px solid var(--gray-100); }
+  #dayModal .day-evt-dot { width:10px;height:10px;border-radius:50%;flex-shrink:0; }
+  #dayModal .day-evt-info { flex:1;min-width:0; }
+  #dayModal .day-evt-team { font-size:15px;font-weight:700;color:var(--gray-900); }
+  #dayModal .day-evt-meta { font-size:12px;color:var(--gray-400);margin-top:2px; }
+  #dayModal .day-evt-status { font-size:12px;padding:3px 10px;border-radius:99px;font-weight:600;flex-shrink:0; }
+  #dayModal .day-evt-edit { font-size:12px;padding:7px 13px;border:1px solid var(--purple-400);color:var(--purple-600);background:white;border-radius:8px;cursor:pointer;font-family:inherit;flex-shrink:0; }
+  #dayModal .day-evt-edit:hover { background:var(--purple-50); }
+  #dayModal .day-empty { text-align:center;padding:24px;color:var(--gray-400);font-size:13px; }
+  #dayModal .day-notice { font-size:12px;color:#E24B4A;padding:8px 12px;background:var(--red-50);border-radius:8px;margin-bottom:8px;font-weight:600; }
+  body:not(.admin-active) .dn { cursor:pointer; }
+  body:not(.admin-active) .dn:hover { color:var(--purple-600); }
+  /* 날짜 수정 팝업 */
+  #dateEditModal { display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:600;align-items:center;justify-content:center; }
+  #dateEditModal.open { display:flex; }
+  #dateEditBox { background:white;border-radius:16px;padding:20px;width:min(320px,90vw);box-shadow:0 8px 32px rgba(0,0,0,0.18); }
+  #dateEditBox .modal-title { font-size:14px;font-weight:600;color:var(--purple-800);margin-bottom:14px; }
+  #dateEditBox .modal-btns { display:flex;gap:8px;justify-content:flex-end;margin-top:14px; }
   /* 일정 수정 모달 */
   #editModal { display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:500;align-items:center;justify-content:center; }
   #editModal.open { display:flex; }
@@ -166,7 +190,33 @@
   <main>
    <div id="toast"></div>
 
-   <!-- 일정 수정 모달 -->
+   <!-- 날짜 일정 팝업 (학생용) -->
+   <div id="dayModal">
+    <div id="dayModalBox">
+     <div class="day-modal-title">
+      <span id="dayModalTitle"></span>
+      <button class="close-btn" id="btnDayModalClose">×</button>
+     </div>
+     <div id="dayModalContent"></div>
+    </div>
+   </div>
+
+   <!-- 날짜 수정 팝업 -->
+   <div id="dateEditModal">
+    <div id="dateEditBox">
+     <div class="modal-title">📅 날짜 수정</div>
+     <div class="field" style="margin-bottom:10px;">
+      <label style="font-size:11px;color:var(--gray-400);display:block;margin-bottom:4px;font-weight:500;">팀: <span id="dateEditTeamName" style="color:var(--purple-800);font-weight:700;"></span></label>
+      <input type="date" id="dateEditInput" style="width:100%;padding:8px 10px;font-size:13px;border:1px solid var(--gray-200);border-radius:6px;font-family:inherit;background:var(--gray-50);">
+     </div>
+     <div class="modal-btns">
+      <button class="btn" id="btnDateEditCancel">취소</button>
+      <button class="btn primary" id="btnDateEditSave">저장</button>
+     </div>
+    </div>
+   </div>
+
+   <!-- 일정 수정 모달 (관리자용) -->
    <div id="editModal">
     <div id="editModalBox">
      <div class="modal-title">✏️ 일정 수정</div>
@@ -821,6 +871,88 @@ function closeModal() {
   editingEvtId = null;
 }
 
+let dateEditEvtId = null;
+
+function openDayModal(dateStr, dayEvts, dayNotices) {
+  if (isAdmin) return;
+  const d = new Date(dateStr + 'T00:00:00');
+  const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+  $('dayModalTitle').textContent = `${d.getMonth()+1}월 ${d.getDate()}일 (${dayNames[d.getDay()]})`;
+  const content = $('dayModalContent');
+  content.innerHTML = '';
+
+  dayNotices.forEach(n => {
+    const el = document.createElement('div');
+    el.className = 'day-notice';
+    el.textContent = '⚠ ' + n.text;
+    content.appendChild(el);
+  });
+
+  const teamEvts = dayEvts.filter(e => e.team);
+  if (teamEvts.length === 0 && dayNotices.length === 0) {
+    content.innerHTML = '<div class="day-empty">이 날 등록된 일정이 없어요.</div>';
+  } else {
+    teamEvts.forEach(evt => {
+      const c = STATUS[evt.status] || STATUS['예정'];
+      const item = document.createElement('div');
+      item.className = 'day-evt-item';
+      const dot = document.createElement('span');
+      dot.className = 'day-evt-dot'; dot.style.background = c.dot;
+      const info = document.createElement('div');
+      info.className = 'day-evt-info';
+      const team = document.createElement('div');
+      team.className = 'day-evt-team'; team.textContent = evt.team;
+      const meta = document.createElement('div');
+      meta.className = 'day-evt-meta';
+      meta.textContent = (TIME_SHORT[evt.time] !== undefined ? TIME_SHORT[evt.time] || '방과후' : evt.time);
+      info.appendChild(team); info.appendChild(meta);
+      const statusBadge = document.createElement('span');
+      statusBadge.className = 'day-evt-status';
+      statusBadge.style.background = c.bg; statusBadge.style.color = c.text;
+      statusBadge.textContent = evt.status;
+      item.appendChild(dot); item.appendChild(info); item.appendChild(statusBadge);
+      if (evt.status !== '완료') {
+        const editBtn = document.createElement('button');
+        editBtn.className = 'day-evt-edit'; editBtn.textContent = '날짜 수정';
+        editBtn.onclick = () => openDateEditModal(evt.id, evt.team, evt.date);
+        item.appendChild(editBtn);
+      }
+      content.appendChild(item);
+    });
+  }
+  $('dayModal').classList.add('open');
+}
+
+function closeDayModal() { $('dayModal').classList.remove('open'); }
+
+function openDateEditModal(id, teamName, currentDate) {
+  dateEditEvtId = id;
+  $('dateEditTeamName').textContent = teamName;
+  $('dateEditInput').value = currentDate;
+  $('dateEditModal').classList.add('open');
+}
+
+function closeDateEditModal() {
+  $('dateEditModal').classList.remove('open');
+  dateEditEvtId = null;
+}
+
+async function saveDateEdit() {
+  const evt = events.find(e => e.id === dateEditEvtId);
+  if (!evt) return;
+  const newDate = $('dateEditInput').value;
+  if (!newDate) { toast('날짜를 선택하세요.'); return; }
+  if (newDate !== evt.date) {
+    evt.date = newDate;
+    if (evt.status === '예정') evt.status = '변경';
+    await saveEvents();
+    buildCal();
+    toast(`날짜가 ${newDate}로 변경되었습니다.`);
+  }
+  closeDateEditModal();
+  closeDayModal();
+}
+
 function startDateEdit(id, el) {
   const evt = events.find(e => e.id === id);
   if (!evt) return;
@@ -965,6 +1097,13 @@ function buildCal() {
     dn.className = 'dn' + (dow === 0 ? ' sun' : dow === 6 ? ' sat' : '');
     if (isToday) { const s = document.createElement('span'); s.className = 'today-circle'; s.textContent = d; dn.appendChild(s); }
     else { dn.textContent = d; }
+    if (!isAdmin) {
+      dn.onclick = () => {
+        const dEvts = events.filter(e => e.date === dateStr && e.team);
+        const dNotices = notices.filter(n => n.date === dateStr);
+        openDayModal(dateStr, dEvts, dNotices);
+      };
+    }
     cell.appendChild(dn);
 
     allItems.forEach(item => {
@@ -1023,6 +1162,11 @@ function bindEvents() {
   $('btnModalDelete').onclick = () => deleteModal();
   $('btnModalCancel').onclick = () => closeModal();
   $('editModal').onclick = (e) => { if (e.target === $('editModal')) closeModal(); };
+  $('btnDayModalClose').onclick = () => closeDayModal();
+  $('dayModal').onclick = (e) => { if (e.target === $('dayModal')) closeDayModal(); };
+  $('btnDateEditCancel').onclick = () => closeDateEditModal();
+  $('btnDateEditSave').onclick = () => saveDateEdit();
+  $('dateEditModal').onclick = (e) => { if (e.target === $('dateEditModal')) closeDateEditModal(); };
   $('btnPrevMonth').onclick = () => changeMonth(-1);
   $('btnToday').onclick = () => goToday();
   $('btnNextMonth').onclick = () => changeMonth(1);
