@@ -252,7 +252,7 @@
    </div>
 
    <div id="adminPanel">
-    <div class="panel-title">🏷️ 팀 관리</div>
+    <div class="panel-title">🏷️ 팀 등록</div>
     <div class="form-grid">
      <div class="field form-full"><label for="teamNameInput">새 팀 이름</label><input type="text" id="teamNameInput" placeholder="예: 사과, 근육도서관"></div>
     </div>
@@ -729,24 +729,25 @@ function updateTeamSelects() {
   const evtSel = $('evtTeam');
   const searchSel = $('searchTeam');
   const sortedTeams = teams.slice().sort();
+  const recentTeams = teams.slice().reverse();
 
   if (stuSel) {
     const prev = stuSel.value;
     stuSel.innerHTML = '<option value="">팀을 선택하세요</option>';
-    sortedTeams.forEach(t => {
+    recentTeams.forEach(t => {
       const opt = document.createElement('option'); opt.value = t; opt.textContent = t;
       stuSel.appendChild(opt);
     });
-    if (sortedTeams.includes(prev)) stuSel.value = prev;
+    if (recentTeams.includes(prev)) stuSel.value = prev;
   }
   if (evtSel) {
     const prev = evtSel.value;
     evtSel.innerHTML = '<option value="">(팀 없음 - 공지용)</option>';
-    sortedTeams.forEach(t => {
+    recentTeams.forEach(t => {
       const opt = document.createElement('option'); opt.value = t; opt.textContent = t;
       evtSel.appendChild(opt);
     });
-    if (sortedTeams.includes(prev)) evtSel.value = prev;
+    if (recentTeams.includes(prev)) evtSel.value = prev;
   }
   if (searchSel) {
     const prev = searchSel.value;
@@ -780,11 +781,11 @@ function startEventEdit(id) {
   $('modalTime').value = evt.time || '';
   $('modalStatus').value = evt.status || '예정';
   $('modalNote').value = evt.note || '';
-  // 팀 select 채우기
+  // 팀 select 채우기 (최근 입력순)
   const modalTeamSel = $('modalTeam');
-  const sortedTeams = teams.slice().sort();
+  const recentTeams = teams.slice().reverse();
   modalTeamSel.innerHTML = '<option value="">(팀 없음 - 공지용)</option>';
-  sortedTeams.forEach(t => {
+  recentTeams.forEach(t => {
     const opt = document.createElement('option'); opt.value = t; opt.textContent = t;
     modalTeamSel.appendChild(opt);
   });
