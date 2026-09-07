@@ -179,7 +179,7 @@
     <div class="header-icon">📚</div>
     <div>
      <div class="header-title">2026 책과함께직진</div>
-     <div class="header-sub"><span class="sync-dot" id="syncDot"></span><span id="syncLabel">진로독서 소모임</span></div>
+     <div class="header-sub"><span class="sync-dot" id="syncDot"></span><span id="syncLabel">진로독서 소모임 일정 공유중</span></div>
     </div>
    </div>
    <div class="mode-toggle">
@@ -355,6 +355,10 @@
      <div id="noticeList" style="font-size:12px;"></div>
     </div>
     <hr class="divider">
+    <div style="font-size:12px;color:var(--gray-400);margin-bottom:8px;font-weight:500;">🔐 학생 날짜 수정 잠금 설정</div>
+    <div id="timeLockUI" style="display:flex;flex-direction:column;gap:8px;margin-bottom:4px;"></div>
+    <div style="font-size:11px;color:var(--gray-400);margin-top:6px;">잠금 ON : 해당 활동시간 일정은 학생이 날짜 수정 불가</div>
+    <hr class="divider">
     <div style="font-size:12px;color:var(--gray-400);margin-bottom:8px;font-weight:500;">🔒 비밀번호 변경 (모두에게 공유됩니다)</div>
     <div class="pw-row">
      <input type="password" id="newPw1" placeholder="새 비밀번호" style="width:140px;">
@@ -424,6 +428,7 @@ let filterTeam = '전체팀';
 let events = [];
 let notices = [];
 let teams = [];
+let timeLocks = { '점심시간': false, '': false, '비대면': false }; // 활동시간별 잠금
 let adminPw = DEFAULT_PW;
 let fbReady = false;
 let isConfigured = true;
@@ -486,6 +491,12 @@ function startRealtimeSync() {
     if (val) adminPw = val;
   });
 
+  onValue(ref(db, 'timeLocks'), (snap) => {
+    const val = snap.val();
+    if (val) timeLocks = val;
+    if (isAdmin) buildTimeLockUI();
+  });
+
   setSyncStatus('online');
 }
 
@@ -521,6 +532,13 @@ async function savePw(pw) {
     await set(ref(db, 'adminPw'), pw);
   } catch (e) {}
 }
+async function saveTimeLocks() {
+  if (!isConfigured) return;
+  try {
+    const { ref, set, db } = window.__fb;
+    await set(ref(db, 'timeLocks'), timeLocks);
+  } catch (e) {}
+}
 
 function tryAdmin() { $('pwPanel').style.display = 'block'; $('pwInput').focus(); }
 function cancelAdmin() { $('pwPanel').style.display = 'none'; $('pwErr').textContent = ''; $('pwInput').value = ''; }
@@ -540,6 +558,7 @@ function checkPw() {
     clearNoticeForm();
     buildNoticeList();
     buildTeamList();
+    buildTimeLockUI();
     buildCal();
     toast('관리자 모드로 전환되었습니다.');
   } else {
@@ -684,6 +703,47 @@ async function editNotice(id) {
   await saveNotices();
   buildCal(); buildNoticeList();
   toast('공지가 수정되었습니다.');
+}
+
+const TIME_LOCK_LABELS = { '점심시간': '점심시간', '': '방과후', '비대면': '비대면' };
+
+function buildTimeLockUI() {
+  const container = $('timeLockUI');
+  if (!container) return;
+  container.innerHTML = '';
+  Object.entries(TIME_LOCK_LABELS).forEach(([key, label]) => {
+    const locked = timeLocks[key] || false;
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border:1px solid var(--gray-200);border-radius:8px;background:' + (locked ? 'var(--red-50)' : 'white');
+    const lbl = document.createElement('span');
+    lbl.style.cssText = 'font-size:13px;font-weight:600;color:var(--gray-700);';
+    lbl.textContent = label;
+    const toggle = document.createElement('button');
+    toggle.style.cssText = 'padding:5px 14px;font-size:12px;border-radius:99px;border:1px solid;cursor:pointer;font-family:inherit;font-weight:600;transition:all 0.15s;';
+    if (locked) {
+      toggle.textContent = '🔒 잠금 ON';
+      toggle.style.background = 'var(--red-50)';
+      toggle.style.color = 'var(--red-400)';
+      toggle.style.borderColor = 'var(--red-400)';
+    } else {
+      toggle.textContent = '🔓 잠금 OFF';
+      toggle.style.background = 'var(--teal-50)';
+      toggle.style.color = 'var(--teal-800)';
+      toggle.style.borderColor = 'var(--teal-400)';
+    }
+    toggle.onclick = () => toggleTimeLock(key);
+    row.appendChild(lbl);
+    row.appendChild(toggle);
+    container.appendChild(row);
+  });
+}
+
+async function toggleTimeLock(timeKey) {
+  timeLocks[timeKey] = !timeLocks[timeKey];
+  await saveTimeLocks();
+  buildTimeLockUI();
+  const label = TIME_LOCK_LABELS[timeKey];
+  toast(`${label} 잠금 ${timeLocks[timeKey] ? 'ON' : 'OFF'}`);
 }
 
 function buildNoticeList() {
@@ -911,10 +971,18 @@ function openDayModal(dateStr, dayEvts, dayNotices) {
       statusBadge.textContent = evt.status;
       item.appendChild(dot); item.appendChild(info); item.appendChild(statusBadge);
       if (evt.status !== '완료') {
-        const editBtn = document.createElement('button');
-        editBtn.className = 'day-evt-edit'; editBtn.textContent = '날짜 수정';
-        editBtn.onclick = () => openDateEditModal(evt.id, evt.team, evt.date);
-        item.appendChild(editBtn);
+        const isLocked = timeLocks[evt.time] || false;
+        if (isLocked) {
+          const lockBadge = document.createElement('span');
+          lockBadge.style.cssText = 'font-size:12px;padding:6px 10px;border-radius:8px;background:var(--red-50);color:var(--red-400);font-weight:600;flex-shrink:0;';
+          lockBadge.textContent = '🔒 수정 불가';
+          item.appendChild(lockBadge);
+        } else {
+          const editBtn = document.createElement('button');
+          editBtn.className = 'day-evt-edit'; editBtn.textContent = '날짜 수정';
+          editBtn.onclick = () => openDateEditModal(evt.id, evt.team, evt.date);
+          item.appendChild(editBtn);
+        }
       }
       content.appendChild(item);
     });
