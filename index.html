@@ -169,14 +169,17 @@
      <button class="btn" id="btnPwCancel">취소</button>
      <span class="pw-err" id="pwErr"></span>
     </div>
-    <div class="pw-hint">초기 비밀번호: 1224</div>
    </div>
 
    <div id="studentPanel">
     <div class="panel-title">📅 예정 일정 등록</div>
     <div class="form-grid">
      <div class="field"><label for="stuDate">날짜</label><input type="date" id="stuDate"></div>
-     <div class="field"><label for="stuTeam">팀 이름</label><input type="text" id="stuTeam" placeholder="예: 사과, 근육도서관"></div>
+     <div class="field"><label for="stuTeam">팀 이름</label>
+      <select id="stuTeam">
+       <option value="">팀을 선택하세요</option>
+      </select>
+     </div>
      <div class="field form-full"><label for="stuTime">활동 시간</label>
       <select id="stuTime">
        <option value="점심시간">점심시간</option>
@@ -193,10 +196,25 @@
    </div>
 
    <div id="adminPanel">
+    <div class="panel-title">🏷️ 팀 관리</div>
+    <div class="form-grid">
+     <div class="field form-full"><label for="teamNameInput">새 팀 이름</label><input type="text" id="teamNameInput" placeholder="예: 사과, 근육도서관"></div>
+    </div>
+    <div class="btn-row">
+     <button class="btn primary" id="btnTeamAdd">+ 팀 추가</button>
+    </div>
+    <div style="margin-top:12px;max-height:160px;overflow-y:auto;border:1px solid var(--gray-200);border-radius:6px;padding:8px;">
+     <div id="teamList" style="font-size:12px;"></div>
+    </div>
+    <hr class="divider">
     <div class="panel-title">📅 일정 추가</div>
     <div class="form-grid">
      <div class="field"><label for="evtDate">날짜</label><input type="date" id="evtDate"></div>
-     <div class="field"><label for="evtTeam">팀 이름</label><input type="text" id="evtTeam" placeholder="예: 사과, 근육도서관"></div>
+     <div class="field"><label for="evtTeam">팀 이름</label>
+      <select id="evtTeam">
+       <option value="">(팀 없음 - 공지용)</option>
+      </select>
+     </div>
      <div class="field"><label for="evtTime">활동 시간</label>
       <select id="evtTime">
        <option value="점심시간">점심시간</option>
@@ -263,6 +281,9 @@
     <button class="ftag all on" data-filter="전체">전체</button>
     <button class="ftag pending" data-filter="예정">예정</button>
     <button class="ftag done" data-filter="완료">완료</button>
+    <select id="teamFilter" style="margin-left:6px;padding:4px 10px;border-radius:99px;font-size:12px;border:1px solid var(--gray-200);background:white;color:var(--gray-700);font-family:inherit;cursor:pointer;">
+     <option value="전체팀">팀 전체</option>
+    </select>
    </div>
 
    <div class="cal-head">
@@ -293,8 +314,10 @@ let curYear = new Date().getFullYear();
 let curMonth = new Date().getMonth();
 let isAdmin = false;
 let filterStatus = '전체';
+let filterTeam = '전체팀';
 let events = [];
 let notices = [];
+let teams = [];
 let adminPw = DEFAULT_PW;
 let fbReady = false;
 let isConfigured = true;
@@ -317,6 +340,8 @@ function checkConfig() {
     setSyncStatus('offline');
     events = SEED_EVENTS.slice();
     notices = [];
+    teams = Array.from(new Set(SEED_EVENTS.filter(e => e.team).map(e => e.team))).sort();
+    updateTeamSelects();
     buildCal();
     return false;
   }
@@ -342,6 +367,18 @@ function startRealtimeSync() {
     notices = val ? Object.values(val) : [];
     buildCal();
     if (isAdmin) buildNoticeList();
+  }, () => setSyncStatus('offline'));
+
+  onValue(ref(db, 'teams'), (snap) => {
+    const val = snap.val();
+    if (val) {
+      teams = Object.values(val);
+    } else {
+      teams = Array.from(new Set(SEED_EVENTS.filter(e => e.team).map(e => e.team))).sort();
+      saveTeams();
+    }
+    updateTeamSelects();
+    if (isAdmin) buildTeamList();
   }, () => setSyncStatus('offline'));
 
   onValue(ref(db, 'adminPw'), (snap) => {
@@ -370,6 +407,13 @@ async function saveNotices() {
     await set(ref(db, 'notices'), obj);
   } catch (e) { setSyncStatus('offline'); }
 }
+async function saveTeams() {
+  if (!isConfigured) { toast('Firebase 설정이 필요합니다. (관리자에게 문의)'); return; }
+  try {
+    const { ref, set, db } = window.__fb;
+    await set(ref(db, 'teams'), teams);
+  } catch (e) { setSyncStatus('offline'); }
+}
 async function savePw(pw) {
   if (!isConfigured) return;
   try {
@@ -395,6 +439,7 @@ function checkPw() {
     setDefaultDate();
     clearNoticeForm();
     buildNoticeList();
+    buildTeamList();
     buildCal();
     toast('관리자 모드로 전환되었습니다.');
   } else {
@@ -562,6 +607,97 @@ function buildNoticeList() {
   });
 }
 
+async function addTeam() {
+  const input = $('teamNameInput');
+  const name = input.value.trim();
+  if (!name) { toast('팀 이름을 입력하세요.'); return; }
+  if (teams.includes(name)) { toast('이미 등록된 팀 이름입니다.'); return; }
+  teams.push(name);
+  await saveTeams();
+  updateTeamSelects();
+  buildTeamList();
+  input.value = '';
+  toast(`'${name}' 팀이 추가되었습니다.`);
+}
+
+async function renameTeam(oldName) {
+  const newName = prompt('팀 이름을 수정하세요:', oldName);
+  if (newName === null) return;
+  const trimmed = newName.trim();
+  if (!trimmed) { toast('팀 이름은 비워둘 수 없습니다.'); return; }
+  if (trimmed === oldName) return;
+  if (teams.includes(trimmed)) { toast('이미 존재하는 팀 이름입니다.'); return; }
+  teams = teams.map(t => t === oldName ? trimmed : t);
+  // 이 팀 이름으로 등록된 모든 일정도 함께 갱신
+  let changedCount = 0;
+  events.forEach(e => { if (e.team === oldName) { e.team = trimmed; changedCount++; } });
+  await saveTeams();
+  if (changedCount > 0) await saveEvents();
+  updateTeamSelects();
+  buildTeamList();
+  buildCal();
+  toast(`'${oldName}' → '${trimmed}'로 변경되었습니다. (일정 ${changedCount}건 함께 수정)`);
+}
+
+async function deleteTeam(name) {
+  const usedCount = events.filter(e => e.team === name).length;
+  const msg = usedCount > 0
+    ? `'${name}' 팀은 등록된 일정이 ${usedCount}건 있습니다. 팀 목록에서만 삭제하고 기존 일정은 그대로 둘까요?`
+    : `'${name}' 팀을 목록에서 삭제할까요?`;
+  if (!confirm(msg)) return;
+  teams = teams.filter(t => t !== name);
+  await saveTeams();
+  updateTeamSelects();
+  buildTeamList();
+  toast(`'${name}' 팀이 목록에서 삭제되었습니다.`);
+}
+
+function buildTeamList() {
+  const list = $('teamList');
+  if (!list) return;
+  list.innerHTML = '';
+  if (teams.length === 0) {
+    list.innerHTML = '<div style="color:var(--gray-400);padding:8px;">등록된 팀이 없습니다.</div>';
+    return;
+  }
+  teams.forEach(name => {
+    const item = document.createElement('div');
+    item.className = 'notice-item';
+    const span1 = document.createElement('span'); span1.className = 'notice-item-text'; span1.textContent = name;
+    const actions = document.createElement('div'); actions.className = 'notice-item-actions';
+    const editBtn = document.createElement('button'); editBtn.className = 'notice-item-btn'; editBtn.textContent = '수정'; editBtn.onclick = () => renameTeam(name);
+    const delBtn = document.createElement('button'); delBtn.className = 'notice-item-btn'; delBtn.textContent = '삭제'; delBtn.onclick = () => deleteTeam(name);
+    actions.appendChild(editBtn); actions.appendChild(delBtn);
+    item.appendChild(span1); item.appendChild(actions);
+    list.appendChild(item);
+  });
+}
+
+function updateTeamSelects() {
+  const stuSel = $('stuTeam');
+  const evtSel = $('evtTeam');
+  const sortedTeams = teams.slice().sort();
+
+  if (stuSel) {
+    const prev = stuSel.value;
+    stuSel.innerHTML = '<option value="">팀을 선택하세요</option>';
+    sortedTeams.forEach(t => {
+      const opt = document.createElement('option'); opt.value = t; opt.textContent = t;
+      stuSel.appendChild(opt);
+    });
+    if (sortedTeams.includes(prev)) stuSel.value = prev;
+  }
+  if (evtSel) {
+    const prev = evtSel.value;
+    evtSel.innerHTML = '<option value="">(팀 없음 - 공지용)</option>';
+    sortedTeams.forEach(t => {
+      const opt = document.createElement('option'); opt.value = t; opt.textContent = t;
+      evtSel.appendChild(opt);
+    });
+    if (sortedTeams.includes(prev)) evtSel.value = prev;
+  }
+}
+
 async function toggleDone(id) {
   if (!isAdmin) return;
   const evt = events.find(e => e.id === id);
@@ -617,6 +753,35 @@ function setFilter(s, el) {
   buildCal();
 }
 
+function setTeamFilter(t) {
+  filterTeam = t;
+  buildCal();
+}
+
+function updateTeamFilterOptions() {
+  const sel = $('teamFilter');
+  if (!sel) return;
+  const teams = Array.from(new Set(events.filter(e => e.team).map(e => e.team))).sort();
+  const prevValue = sel.value || filterTeam;
+  sel.innerHTML = '';
+  const allOpt = document.createElement('option');
+  allOpt.value = '전체팀'; allOpt.textContent = '팀 전체';
+  sel.appendChild(allOpt);
+  teams.forEach(t => {
+    const opt = document.createElement('option');
+    opt.value = t; opt.textContent = t;
+    sel.appendChild(opt);
+  });
+  // 이전에 선택했던 팀이 여전히 목록에 있으면 유지
+  if (teams.includes(prevValue) || prevValue === '전체팀') {
+    sel.value = prevValue;
+    filterTeam = prevValue;
+  } else {
+    sel.value = '전체팀';
+    filterTeam = '전체팀';
+  }
+}
+
 function changeMonth(d) {
   curMonth += d;
   if (curMonth < 0) { curMonth = 11; curYear--; }
@@ -641,6 +806,7 @@ function buildStats() {
 }
 
 function buildCal() {
+  updateTeamFilterOptions();
   if (isAdmin) buildStats();
   $('monthLabel').textContent = `${curYear}년 ${curMonth+1}월`;
   const grid = $('calGrid');
@@ -657,7 +823,7 @@ function buildCal() {
     const dow = (firstDay + d - 1) % 7;
     const isToday = today.getFullYear() === curYear && today.getMonth() === curMonth && today.getDate() === d;
     const dateStr = `${ms}-${String(d).padStart(2,'0')}`;
-    const dayEvts = events.filter(e => e.date === dateStr && (filterStatus === '전체' || e.status === filterStatus || !e.team));
+    const dayEvts = events.filter(e => e.date === dateStr && (filterStatus === '전체' || e.status === filterStatus || !e.team) && (filterTeam === '전체팀' || e.team === filterTeam || !e.team));
     const dayNotices = notices.filter(n => n.date === dateStr);
     const allItems = [...dayEvts, ...dayNotices];
 
@@ -719,6 +885,8 @@ function bindEvents() {
   $('addBtn').onclick = () => addEvent();
   $('btnNoticeClear').onclick = () => clearNoticeForm();
   $('btnNoticeAdd').onclick = () => addNotice();
+  $('btnTeamAdd').onclick = () => addTeam();
+  $('teamNameInput').onkeydown = (e) => { if (e.key === 'Enter') addTeam(); };
   $('btnChangePw').onclick = () => changePw();
   $('btnPrevMonth').onclick = () => changeMonth(-1);
   $('btnToday').onclick = () => goToday();
@@ -726,6 +894,7 @@ function bindEvents() {
   document.querySelectorAll('.ftag').forEach(btn => {
     btn.addEventListener('click', () => setFilter(btn.dataset.filter, btn));
   });
+  $('teamFilter').addEventListener('change', (e) => setTeamFilter(e.target.value));
 }
 
 function init() {
