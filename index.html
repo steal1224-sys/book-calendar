@@ -132,6 +132,16 @@
   .notice-item-actions { display:flex;gap:4px; }
   .notice-item-btn { font-size:11px;padding:2px 6px;border:none;background:transparent;cursor:pointer;color:var(--gray-400);font-family:inherit;border-radius:3px;transition:all 0.15s; }
   .notice-item-btn:hover { background:rgba(0,0,0,0.1);color:var(--gray-700); }
+  /* 일정 수정 모달 */
+  #editModal { display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:500;align-items:center;justify-content:center; }
+  #editModal.open { display:flex; }
+  #editModalBox { background:white;border-radius:16px;padding:20px;width:min(360px,90vw);box-shadow:0 8px 32px rgba(0,0,0,0.18); }
+  #editModal .modal-title { font-size:14px;font-weight:600;color:var(--purple-800);margin-bottom:14px; }
+  #editModal .field { margin-bottom:10px; }
+  #editModal .field label { font-size:11px;color:var(--gray-400);display:block;margin-bottom:4px;font-weight:500; }
+  #editModal .field input,#editModal .field select { width:100%;padding:8px 10px;font-size:13px;border:1px solid var(--gray-200);border-radius:6px;font-family:inherit;background:var(--gray-50);color:var(--gray-900); }
+  #editModal .field input:focus,#editModal .field select:focus { outline:none;border-color:var(--purple-400);background:white; }
+  #editModal .modal-btns { display:flex;gap:8px;justify-content:flex-end;margin-top:14px; }
   @media(max-width:600px){
     header{padding:14px 16px;} .header-title{font-size:15px;} main{padding:14px 10px 32px;}
     .cell{min-height:64px;padding:3px;} .evt{font-size:9px;padding:1px 3px;} .form-grid{grid-template-columns:1fr;}
@@ -155,6 +165,39 @@
   </header>
   <main>
    <div id="toast"></div>
+
+   <!-- 일정 수정 모달 -->
+   <div id="editModal">
+    <div id="editModalBox">
+     <div class="modal-title">✏️ 일정 수정</div>
+     <div class="field"><label for="modalDate">날짜</label><input type="date" id="modalDate"></div>
+     <div class="field"><label for="modalTeam">팀 이름</label>
+      <select id="modalTeam">
+       <option value="">(팀 없음 - 공지용)</option>
+      </select>
+     </div>
+     <div class="field"><label for="modalTime">활동 시간</label>
+      <select id="modalTime">
+       <option value="점심시간">점심시간</option>
+       <option value="">방과후</option>
+       <option value="비대면">비대면</option>
+      </select>
+     </div>
+     <div class="field"><label for="modalStatus">상태</label>
+      <select id="modalStatus">
+       <option value="예정">예정</option>
+       <option value="완료">완료</option>
+       <option value="변경">변경</option>
+      </select>
+     </div>
+     <div class="field"><label for="modalNote">공지사항 (선택)</label><input type="text" id="modalNote" placeholder="예: 사서쌤 출장으로 방과후 불가"></div>
+     <div class="modal-btns">
+      <button class="btn" id="btnModalDelete" style="color:var(--red-400);border-color:var(--red-400);">삭제</button>
+      <button class="btn" id="btnModalCancel">취소</button>
+      <button class="btn primary" id="btnModalSave">저장</button>
+     </div>
+    </div>
+   </div>
 
    <div id="setupBanner">
     ⚠️ Firebase 설정이 아직 완료되지 않았습니다. 이 HTML 파일 상단의 <code>firebaseConfig</code> 값을
@@ -727,17 +770,54 @@ async function toggleDone(id) {
   toast(evt.status === '완료' ? `${evt.team} 완료로 변경되었습니다.` : `${evt.team} 예정으로 되돌렸습니다.`);
 }
 
+let editingEvtId = null;
+
 function startEventEdit(id) {
   const evt = events.find(e => e.id === id);
-  if (!evt || !evt.team) return;
-  $('evtDate').value = evt.date;
-  $('evtTeam').value = evt.team;
-  $('evtTime').value = evt.time || '';
-  $('evtStatus').value = evt.status;
-  $('evtNote').value = evt.note || '';
-  $('addBtn').textContent = '✓ 일정 수정';
-  $('addBtn').onclick = () => saveEventEdit(id);
-  $('adminPanel').scrollIntoView({ behavior: 'smooth' });
+  if (!evt) return;
+  editingEvtId = id;
+  $('modalDate').value = evt.date;
+  $('modalTime').value = evt.time || '';
+  $('modalStatus').value = evt.status || '예정';
+  $('modalNote').value = evt.note || '';
+  // 팀 select 채우기
+  const modalTeamSel = $('modalTeam');
+  const sortedTeams = teams.slice().sort();
+  modalTeamSel.innerHTML = '<option value="">(팀 없음 - 공지용)</option>';
+  sortedTeams.forEach(t => {
+    const opt = document.createElement('option'); opt.value = t; opt.textContent = t;
+    modalTeamSel.appendChild(opt);
+  });
+  modalTeamSel.value = evt.team || '';
+  $('editModal').classList.add('open');
+}
+
+async function saveModal() {
+  const evt = events.find(e => e.id === editingEvtId);
+  if (!evt) return;
+  evt.date = $('modalDate').value;
+  evt.team = $('modalTeam').value;
+  evt.time = $('modalTime').value;
+  evt.status = $('modalStatus').value;
+  evt.note = $('modalNote').value.trim();
+  await saveEvents();
+  buildCal();
+  closeModal();
+  toast('일정이 수정되었습니다.');
+}
+
+async function deleteModal() {
+  if (!confirm('이 일정을 삭제할까요?')) return;
+  events = events.filter(e => e.id !== editingEvtId);
+  await saveEvents();
+  buildCal();
+  closeModal();
+  toast('일정이 삭제되었습니다.');
+}
+
+function closeModal() {
+  $('editModal').classList.remove('open');
+  editingEvtId = null;
 }
 
 function startDateEdit(id, el) {
@@ -938,6 +1018,10 @@ function bindEvents() {
   $('btnTeamAdd').onclick = () => addTeam();
   $('teamNameInput').onkeydown = (e) => { if (e.key === 'Enter') addTeam(); };
   $('btnChangePw').onclick = () => changePw();
+  $('btnModalSave').onclick = () => saveModal();
+  $('btnModalDelete').onclick = () => deleteModal();
+  $('btnModalCancel').onclick = () => closeModal();
+  $('editModal').onclick = (e) => { if (e.target === $('editModal')) closeModal(); };
   $('btnPrevMonth').onclick = () => changeMonth(-1);
   $('btnToday').onclick = () => goToday();
   $('btnNextMonth').onclick = () => changeMonth(1);
