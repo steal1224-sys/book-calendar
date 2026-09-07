@@ -861,7 +861,7 @@ function renderTeamSchedule(teamName) {
   const result = $('teamScheduleResult');
   if (!result) return;
   if (!teamName) { result.innerHTML = ''; return; }
-  const teamEvts = events.filter(e => e.team === teamName).sort((a, b) => a.date.localeCompare(b.date));
+  const teamEvts = events.filter(e => e.team === teamName).sort((a, b) => b.date.localeCompare(a.date));
   if (teamEvts.length === 0) {
     result.innerHTML = `<div style="color:var(--gray-400);font-size:12px;padding:8px 0;">등록된 일정이 없습니다.</div>`;
     return;
