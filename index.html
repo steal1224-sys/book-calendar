@@ -151,7 +151,7 @@
   body:not(.admin-active) .dn { cursor:pointer; }
   body:not(.admin-active) .dn:hover { color:var(--purple-600); }
   /* 날짜 수정 팝업 */
-  #dateEditModal { display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:600;align-items:center;justify-content:center; }
+  #dateEditModal { display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:600;align-items:flex-start;justify-content:center;padding-top:120px; }
   #dateEditModal.open { display:flex; }
   #dateEditBox { background:white;border-radius:16px;padding:20px;width:min(320px,90vw);box-shadow:0 8px 32px rgba(0,0,0,0.18); }
   #dateEditBox .modal-title { font-size:14px;font-weight:600;color:var(--purple-800);margin-bottom:14px; }
@@ -178,8 +178,8 @@
    <div class="header-brand">
     <div class="header-icon">📚</div>
     <div>
-     <div class="header-title">책과함께직진</div>
-     <div class="header-sub"><span class="sync-dot" id="syncDot"></span><span id="syncLabel">연결 중...</span></div>
+     <div class="header-title">2026 책과함께직진</div>
+     <div class="header-sub"><span class="sync-dot" id="syncDot"></span><span id="syncLabel">진로독서 소모임</span></div>
     </div>
    </div>
    <div class="mode-toggle">
@@ -370,7 +370,7 @@
    </div>
 
    <div style="background:var(--teal-50);border:1px solid var(--teal-400);border-radius:6px;padding:8px 12px;font-size:13px;color:var(--gray-700);margin-bottom:16px;line-height:1.5;font-weight:700;">
-    💡 날짜 변경 방법 : <span style="color:var(--gray-700);">예정 일정</span>을 더블클릭 후 변경(완료된 일정은 변경 불가)
+    💡 날짜 변경 방법 : <span style="color:var(--gray-700);">예정 일자</span>를 클릭한 후 변경(완료된 일정은 변경 불가)
    </div>
 
    <div class="month-nav">
@@ -431,11 +431,10 @@ let isConfigured = true;
 function $(id) { return document.getElementById(id); }
 
 function setSyncStatus(state) {
-  const dot = $('syncDot'); const label = $('syncLabel');
+  const dot = $('syncDot');
   dot.classList.remove('syncing', 'offline');
-  if (state === 'syncing') { dot.classList.add('syncing'); label.textContent = '동기화 중...'; }
-  else if (state === 'offline') { dot.classList.add('offline'); label.textContent = '연결 안 됨'; }
-  else { label.textContent = '실시간 공유 중'; }
+  if (state === 'syncing') { dot.classList.add('syncing'); }
+  else if (state === 'offline') { dot.classList.add('offline'); }
 }
 
 function checkConfig() {
