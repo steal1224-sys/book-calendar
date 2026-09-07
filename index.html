@@ -172,7 +172,7 @@
    </div>
 
    <div id="studentPanel">
-    <div class="panel-title">📅 예정 일정 등록</div>
+    <div class="panel-title">📅 예정 일정 확인</div>
     <div class="form-grid">
      <div class="field"><label for="stuDate">날짜</label><input type="date" id="stuDate"></div>
      <div class="field"><label for="stuTeam">팀 이름</label>
@@ -340,7 +340,7 @@ function checkConfig() {
     setSyncStatus('offline');
     events = SEED_EVENTS.slice();
     notices = [];
-    teams = Array.from(new Set(SEED_EVENTS.filter(e => e.team).map(e => e.team))).sort();
+    teams = [];
     updateTeamSelects();
     buildCal();
     return false;
@@ -371,12 +371,7 @@ function startRealtimeSync() {
 
   onValue(ref(db, 'teams'), (snap) => {
     const val = snap.val();
-    if (val) {
-      teams = Object.values(val);
-    } else {
-      teams = Array.from(new Set(SEED_EVENTS.filter(e => e.team).map(e => e.team))).sort();
-      saveTeams();
-    }
+    teams = val ? Object.values(val) : [];
     updateTeamSelects();
     if (isAdmin) buildTeamList();
   }, () => setSyncStatus('offline'));
