@@ -132,6 +132,10 @@
   .notice-item-actions { display:flex;gap:4px; }
   .notice-item-btn { font-size:11px;padding:2px 6px;border:none;background:transparent;cursor:pointer;color:var(--gray-400);font-family:inherit;border-radius:3px;transition:all 0.15s; }
   .notice-item-btn:hover { background:rgba(0,0,0,0.1);color:var(--gray-700); }
+  .date-chips { display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;min-height:28px; }
+  .date-chip { display:inline-flex;align-items:center;gap:4px;background:var(--purple-50);color:var(--purple-800);border:1px solid var(--purple-100);border-radius:99px;padding:3px 10px;font-size:12px;font-weight:600; }
+  .date-chip-del { cursor:pointer;opacity:0.6;font-size:13px;line-height:1; }
+  .date-chip-del:hover { opacity:1; }
   /* 날짜 일정 팝업 (학생용) */
   #dayModal { display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:500;align-items:flex-end;justify-content:center;padding-bottom:60px; }
   #dayModal.open { display:flex; }
@@ -322,7 +326,11 @@
     <hr class="divider">
     <div class="panel-title">📅 일정 추가</div>
     <div class="form-grid">
-     <div class="field"><label for="evtDate">날짜</label><input type="date" id="evtDate"></div>
+     <div class="field form-full">
+      <label for="evtDate">날짜 <span style="font-size:11px;color:var(--gray-400);font-weight:400;">(여러 날짜 선택 가능)</span></label>
+      <input type="date" id="evtDate">
+      <div class="date-chips" id="evtDateChips"></div>
+     </div>
      <div class="field"><label for="evtTeam">팀 이름</label>
       <select id="evtTeam">
        <option value="">(팀 없음 - 공지용)</option>
@@ -446,6 +454,7 @@ let curYear = new Date().getFullYear();
 let curMonth = new Date().getMonth();
 let isAdmin = false;
 let filterStatus = '전체';
+let selectedDates = []; // 관리자 일정 추가 시 선택된 날짜 목록
 let filterTeam = '전체팀';
 let events = [];
 let notices = [];
@@ -652,8 +661,27 @@ async function addStudentEvent() {
   $('stuTime').value = '점심시간';
 }
 
+function renderDateChips() {
+  const container = $('evtDateChips');
+  if (!container) return;
+  container.innerHTML = '';
+  selectedDates.forEach(d => {
+    const chip = document.createElement('span');
+    chip.className = 'date-chip';
+    chip.innerHTML = `${d} <span class="date-chip-del" onclick="removeDateChip('${d}')">×</span>`;
+    container.appendChild(chip);
+  });
+}
+
+function removeDateChip(date) {
+  selectedDates = selectedDates.filter(d => d !== date);
+  renderDateChips();
+}
+
 function clearForm() {
   setDefaultDate();
+  selectedDates = [];
+  renderDateChips();
   $('evtTeam').value = '';
   $('evtNote').value = '';
   $('evtTime').value = '점심시간';
@@ -669,17 +697,21 @@ function clearNoticeForm() {
 }
 
 async function addEvent() {
-  const date = $('evtDate').value;
   const team = $('evtTeam').value.trim();
   const time = $('evtTime').value;
   const status = $('evtStatus').value;
   const note = $('evtNote').value.trim();
-  if (!date) { toast('날짜를 선택하세요.'); return; }
+  // 칩에 선택된 날짜가 없으면 input에 직접 입력한 날짜 사용
+  const singleDate = $('evtDate').value;
+  const dates = selectedDates.length > 0 ? selectedDates : (singleDate ? [singleDate] : []);
+  if (dates.length === 0) { toast('날짜를 선택하세요.'); return; }
   if (!team && !note) { toast('팀 이름 또는 공지사항을 입력하세요.'); return; }
-  events.push({ id: Date.now(), date, team, time, status, note });
+  dates.forEach(date => {
+    events.push({ id: Date.now() + Math.random(), date, team, time, status, note });
+  });
   await saveEvents();
   buildCal();
-  toast(`${date} 일정이 추가되었습니다.`);
+  toast(`${dates.length}건 일정이 추가되었습니다.`);
   clearForm();
 }
 
@@ -1276,6 +1308,17 @@ function bindEvents() {
   $('btnStudent').onclick = () => setMode('student');
   $('btnAdmin').onclick = () => tryAdmin();
   $('btnPwOk').onclick = () => checkPw();
+  // 날짜 선택 시 칩에 추가
+  $('evtDate').addEventListener('change', () => {
+    const val = $('evtDate').value;
+    if (!val) return;
+    if (!selectedDates.includes(val)) {
+      selectedDates.push(val);
+      selectedDates.sort();
+      renderDateChips();
+    }
+    $('evtDate').value = '';
+  });
   $('btnPwCancel').onclick = () => cancelAdmin();
   $('pwInput').onkeydown = (e) => { if (e.key === 'Enter') checkPw(); };
   $('btnStuAdd').onclick = () => addStudentEvent();
