@@ -62,11 +62,13 @@
   /* 관리자 2단 레이아웃 */
   body.admin-active main { max-width:1400px; }
   #adminLayout { display:block; }
-  body.admin-active #adminLayout { display:grid;grid-template-columns:380px 1fr;gap:20px;align-items:start; }
+  body.admin-active #adminLayout { display:grid;grid-template-columns:minmax(500px,55%) 1fr;gap:20px;align-items:start; }
   #adminLeft { min-width:0;max-height:calc(100vh - 80px);overflow-y:auto; }
   #adminLeft .admin-grid { display:grid;grid-template-columns:1fr 1fr;gap:14px; }
-  #adminLeft .admin-grid-item { background:white;border:1px solid var(--gray-200);border-radius:12px;padding:16px; }
+  #adminLeft .admin-grid-item { background:white;border:1px solid var(--gray-200);border-radius:12px;padding:16px;min-width:0; }
   #adminRight { min-width:0;position:sticky;top:76px; }
+  /* 팀 목록 텍스트 줄바꿈 */
+  #teamList .notice-item-text, #blockList .notice-item-text { white-space:normal;word-break:break-all; }
   @media(max-width:900px){
     body.admin-active #adminLayout { display:block; }
     body.admin-active #adminRight { position:static; }
@@ -79,7 +81,7 @@
   .pw-row input:focus { outline:none;border-color:var(--purple-400); }
   .pw-hint { font-size:11px;color:var(--gray-400);margin-top:6px; }
   .pw-err { font-size:12px;color:var(--red-400); }
-  #adminPanel { background:white;border:1px solid var(--gray-200);border-radius:16px;padding:20px;margin-bottom:20px;display:none; }
+  #adminPanel { display:none; }
   #studentPanel { background:white;border:1px solid var(--gray-200);border-radius:16px;padding:20px;margin-bottom:20px;display:block; }
   .panel-title { font-size:14px;font-weight:600;color:var(--purple-800);margin-bottom:14px;display:flex;align-items:center;gap:7px; }
   .form-grid { display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px; }
@@ -142,7 +144,7 @@
   .leg { display:flex;align-items:center;gap:5px;font-size:12px;color:var(--gray-400); }
   .leg-dot { width:8px;height:8px;border-radius:50%; }
   .notice-item { display:flex;align-items:center;justify-content:space-between;padding:6px 8px;background:var(--red-50);border-left:3px solid var(--red-400);margin-bottom:6px;border-radius:3px; }
-  .notice-item-text { font-size:11px;color:var(--gray-700);flex:1; }
+  .notice-item-text { font-size:11px;color:var(--gray-700);flex:1;word-break:break-all; }
   .notice-item-date { font-size:10px;color:var(--gray-400);margin:0 8px; }
   .notice-item-actions { display:flex;gap:4px; }
   .notice-item-btn { font-size:11px;padding:2px 6px;border:none;background:transparent;cursor:pointer;color:var(--gray-400);font-family:inherit;border-radius:3px;transition:all 0.15s; }
@@ -619,7 +621,6 @@ function checkPw() {
     $('btnStudent').classList.remove('active');
     $('adminPanel').style.display = 'block';
     $('studentPanel').style.display = 'none';
-    $('adminLayout').style.display = 'grid';
     $('statsRow').style.display = 'grid';
     document.body.classList.add('admin-active');
     setDefaultDate();
@@ -641,7 +642,6 @@ function setMode(m) {
     $('btnAdmin').classList.remove('active');
     $('adminPanel').style.display = 'none';
     $('studentPanel').style.display = 'block';
-    $('adminLayout').style.display = 'block';
     $('statsRow').style.display = 'none';
     $('pwPanel').style.display = 'none';
     document.body.classList.remove('admin-active');
