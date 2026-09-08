@@ -657,11 +657,10 @@ async function addStudentEvent() {
     return;
   }
   events.push({ id: Date.now(), date, team, time, status: '예정', note: '' });
-  await saveEvents();
-  buildCal();
   toast(`${date} 일정이 등록되었습니다.`);
   $('stuTeam').value = '';
   $('stuTime').value = '점심시간';
+  await saveEvents();
 }
 
 function renderDateChips() {
@@ -705,18 +704,17 @@ async function addEvent() {
   const time = $('evtTime').value;
   const status = $('evtStatus').value;
   const note = $('evtNote').value.trim();
-  // 칩에 선택된 날짜가 없으면 input에 직접 입력한 날짜 사용
   const singleDate = $('evtDate').value;
   const dates = selectedDates.length > 0 ? selectedDates : (singleDate ? [singleDate] : []);
   if (dates.length === 0) { toast('날짜를 선택하세요.'); return; }
   if (!team && !note) { toast('팀 이름 또는 공지사항을 입력하세요.'); return; }
+  const now = Date.now();
   dates.forEach((date, idx) => {
-    events.push({ id: Date.now() + idx, date, team, time, status, note });
+    events.push({ id: now + idx, date, team, time, status, note });
   });
-  await saveEvents();
-  buildCal();
   toast(`${dates.length}건 일정이 추가되었습니다.`);
   clearForm();
+  await saveEvents();
 }
 
 async function saveEventEdit(id) {
