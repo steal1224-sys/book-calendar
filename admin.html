@@ -206,8 +206,10 @@ header{background:var(--purple-900);color:white;padding:0 20px;display:flex;alig
      <!-- 팀 등록 -->
      <div class="tab-pane active" id="tab-team">
       <div class="section-title">🏷️ 팀 등록</div>
-      <div class="field"><label for="teamNameInput">새 팀 이름</label><input type="text" id="teamNameInput" placeholder="예: 사과, 근육도서관"></div>
-      <div class="btn-row"><button class="btn primary" id="btnTeamAdd">+ 팀 추가</button></div>
+      <div style="display:flex;gap:6px;margin-bottom:10px;flex-shrink:0;">
+       <input type="text" id="teamNameInput" placeholder="새 팀 이름 입력" style="flex:1;padding:8px 10px;font-size:13px;border:1px solid var(--gray-200);border-radius:6px;font-family:inherit;background:var(--gray-50);">
+       <button class="btn primary" id="btnTeamAdd" style="white-space:nowrap;">+ 추가</button>
+      </div>
       <div class="list-box"><div id="teamList"><div class="list-empty">등록된 팀이 없습니다.</div></div></div>
      </div>
 
@@ -248,11 +250,10 @@ header{background:var(--purple-900);color:white;padding:0 20px;display:flex;alig
      <!-- 공지사항 관리 -->
      <div class="tab-pane" id="tab-notice">
       <div class="section-title">📣 공지사항 관리</div>
-      <div class="field"><label for="noticeText">내용</label><input type="text" id="noticeText" placeholder="예: 사서쌤 출장으로 방과후 불가"></div>
-      <div class="field"><label for="noticeDate">날짜</label><input type="date" id="noticeDate"></div>
-      <div class="btn-row">
-       <button class="btn" id="btnNoticeClear">초기화</button>
-       <button class="btn primary" id="btnNoticeAdd">+ 공지 추가</button>
+      <div style="display:flex;gap:6px;margin-bottom:8px;flex-shrink:0;">
+       <input type="text" id="noticeText" placeholder="공지사항 내용" style="flex:1;padding:8px 10px;font-size:13px;border:1px solid var(--gray-200);border-radius:6px;font-family:inherit;background:var(--gray-50);">
+       <input type="date" id="noticeDate" style="padding:8px 10px;font-size:13px;border:1px solid var(--gray-200);border-radius:6px;font-family:inherit;background:var(--gray-50);">
+       <button class="btn primary" id="btnNoticeAdd" style="white-space:nowrap;">+ 추가</button>
       </div>
       <div class="list-box"><div id="noticeList"><div class="list-empty">등록된 공지가 없습니다.</div></div></div>
      </div>
@@ -260,16 +261,16 @@ header{background:var(--purple-900);color:white;padding:0 20px;display:flex;alig
      <!-- 등록 차단 -->
      <div class="tab-pane" id="tab-block">
       <div class="section-title">🚫 등록 차단 설정</div>
-      <div style="font-size:11px;color:var(--gray-400);margin-bottom:10px;">지정한 날짜+시간은 학생 일정 등록 불가</div>
-      <div class="field"><label for="blockDate">날짜</label><input type="date" id="blockDate"></div>
-      <div class="field"><label for="blockTime">활동 시간</label>
-       <select id="blockTime">
+      <div style="font-size:11px;color:var(--gray-400);margin-bottom:8px;flex-shrink:0;">지정한 날짜+시간은 학생 일정 등록 불가</div>
+      <div style="display:flex;gap:6px;margin-bottom:8px;flex-shrink:0;">
+       <input type="date" id="blockDate" style="flex:1;padding:8px 10px;font-size:13px;border:1px solid var(--gray-200);border-radius:6px;font-family:inherit;background:var(--gray-50);">
+       <select id="blockTime" style="padding:8px 10px;font-size:13px;border:1px solid var(--gray-200);border-radius:6px;font-family:inherit;background:var(--gray-50);">
         <option value="점심시간">점심시간</option>
         <option value="">방과후</option>
         <option value="비대면">비대면</option>
        </select>
+       <button class="btn primary" id="btnBlockAdd" style="white-space:nowrap;">+ 추가</button>
       </div>
-      <div class="btn-row"><button class="btn primary" id="btnBlockAdd">+ 차단 추가</button></div>
       <div class="list-box"><div id="blockList"><div class="list-empty">등록된 차단이 없습니다.</div></div></div>
      </div>
 
