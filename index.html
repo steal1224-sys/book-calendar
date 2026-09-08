@@ -107,6 +107,9 @@
   .cell.empty { background:transparent;border-color:transparent; }
   .cell.today { border:2px solid var(--purple-400); }
   .cell.weekend { background:#FAFAF9; }
+  .cell.selected { background:var(--purple-50);border:2px solid var(--purple-400); }
+  .admin-active .dn { cursor:pointer; }
+  .admin-active .dn:hover { color:var(--purple-600); }
   .dn { font-size:11px;color:var(--gray-400);margin-bottom:3px; }
   .dn.sun { color:var(--red-400); }
   .dn.sat { color:#185FA5; }
@@ -327,7 +330,7 @@
     <div class="panel-title">📅 일정 추가</div>
     <div class="form-grid">
      <div class="field form-full">
-      <label for="evtDate">날짜 <span style="font-size:11px;color:var(--gray-400);font-weight:400;">(여러 날짜 선택 가능)</span></label>
+      <label for="evtDate">날짜 <span style="font-size:11px;color:var(--gray-400);font-weight:400;">(달력에서 클릭하거나 직접 입력)</span></label>
       <input type="date" id="evtDate">
       <div class="date-chips" id="evtDateChips"></div>
      </div>
@@ -688,6 +691,7 @@ function clearForm() {
   $('evtStatus').value = '예정';
   $('addBtn').textContent = '+ 일정 추가';
   $('addBtn').onclick = addEvent;
+  buildCal();
 }
 
 function clearNoticeForm() {
@@ -706,8 +710,8 @@ async function addEvent() {
   const dates = selectedDates.length > 0 ? selectedDates : (singleDate ? [singleDate] : []);
   if (dates.length === 0) { toast('날짜를 선택하세요.'); return; }
   if (!team && !note) { toast('팀 이름 또는 공지사항을 입력하세요.'); return; }
-  dates.forEach(date => {
-    events.push({ id: Date.now() + Math.random(), date, team, time, status, note });
+  dates.forEach((date, idx) => {
+    events.push({ id: Date.now() + idx, date, team, time, status, note });
   });
   await saveEvents();
   buildCal();
@@ -1252,7 +1256,8 @@ function buildCal() {
     const allItems = [...dayEvts, ...dayNotices];
 
     const cell = document.createElement('div');
-    cell.className = 'cell' + (isToday ? ' today' : '') + (dow === 0 || dow === 6 ? ' weekend' : '');
+    const isSelected = isAdmin && selectedDates.includes(dateStr);
+    cell.className = 'cell' + (isToday ? ' today' : '') + (dow === 0 || dow === 6 ? ' weekend' : '') + (isSelected ? ' selected' : '');
 
     const dn = document.createElement('div');
     dn.className = 'dn' + (dow === 0 ? ' sun' : dow === 6 ? ' sat' : '');
@@ -1263,6 +1268,17 @@ function buildCal() {
         const dEvts = events.filter(e => e.date === dateStr && e.team);
         const dNotices = notices.filter(n => n.date === dateStr);
         openDayModal(dateStr, dEvts, dNotices);
+      };
+    } else {
+      dn.onclick = () => {
+        if (selectedDates.includes(dateStr)) {
+          selectedDates = selectedDates.filter(d => d !== dateStr);
+        } else {
+          selectedDates.push(dateStr);
+          selectedDates.sort();
+        }
+        renderDateChips();
+        buildCal();
       };
     }
     cell.appendChild(dn);
