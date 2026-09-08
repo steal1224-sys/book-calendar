@@ -59,6 +59,18 @@
   .mode-btn { padding:5px 14px;font-size:12px;border:none;background:transparent;cursor:pointer;color:rgba(255,255,255,0.65);font-family:inherit;transition:all 0.15s;white-space:nowrap; }
   .mode-btn.active { background:var(--purple-400);color:white;font-weight:500; }
   main { max-width:800px;margin:0 auto;padding:20px 16px 40px; }
+  /* 관리자 2단 레이아웃 */
+  body.admin-active main { max-width:1400px; }
+  #adminLayout { display:block; }
+  body.admin-active #adminLayout { display:grid;grid-template-columns:380px 1fr;gap:20px;align-items:start; }
+  #adminLeft { min-width:0;max-height:calc(100vh - 80px);overflow-y:auto; }
+  #adminLeft .admin-grid { display:grid;grid-template-columns:1fr 1fr;gap:14px; }
+  #adminLeft .admin-grid-item { background:white;border:1px solid var(--gray-200);border-radius:12px;padding:16px; }
+  #adminRight { min-width:0;position:sticky;top:76px; }
+  @media(max-width:900px){
+    body.admin-active #adminLayout { display:block; }
+    body.admin-active #adminRight { position:static; }
+  }
   #toast { position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--purple-900);color:white;font-size:13px;padding:10px 20px;border-radius:10px;display:none;z-index:999;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,0.2); }
   #setupBanner { background:var(--red-50);border:1px solid var(--red-400);border-radius:8px;padding:14px 16px;margin-bottom:16px;font-size:13px;color:var(--red-800);line-height:1.6;display:none; }
   #pwPanel { background:white;border:1px solid var(--gray-200);border-radius:10px;padding:16px 20px;margin-bottom:16px;display:none; }
@@ -315,91 +327,108 @@
     <div class="pw-hint" style="margin-top:10px;">※ 등록 된 일정은 날짜를 클릭하여 직접 수정 가능. 단, 삭제나 완료 처리는 관리자만 가능함.</div>
    </div>
 
-   <div id="adminPanel">
-    <div class="panel-title">🏷️ 팀 등록</div>
-    <div class="form-grid">
-     <div class="field form-full"><label for="teamNameInput">새 팀 이름</label><input type="text" id="teamNameInput" placeholder="예: 사과, 근육도서관"></div>
-    </div>
-    <div class="btn-row">
-     <button class="btn primary" id="btnTeamAdd">+ 팀 추가</button>
-    </div>
-    <div style="margin-top:12px;max-height:160px;overflow-y:auto;border:1px solid var(--gray-200);border-radius:6px;padding:8px;">
-     <div id="teamList" style="font-size:12px;"></div>
-    </div>
-    <hr class="divider">
-    <div class="panel-title">📅 일정 추가</div>
-    <div class="form-grid">
-     <div class="field form-full">
-      <label for="evtDate">날짜 <span style="font-size:11px;color:var(--gray-400);font-weight:400;">(달력에서 클릭하거나 직접 입력)</span></label>
-      <input type="date" id="evtDate">
-      <div class="date-chips" id="evtDateChips"></div>
-     </div>
-     <div class="field"><label for="evtTeam">팀 이름</label>
-      <select id="evtTeam">
-       <option value="">(팀 없음 - 공지용)</option>
-      </select>
-     </div>
-     <div class="field"><label for="evtTime">활동 시간</label>
-      <select id="evtTime">
-       <option value="점심시간">점심시간</option>
-       <option value="">방과후</option>
-       <option value="비대면">비대면</option>
-      </select>
-     </div>
-     <div class="field"><label for="evtStatus">상태</label>
-      <select id="evtStatus">
-       <option value="예정">예정</option>
-       <option value="완료">완료</option>
-       <option value="변경">변경</option>
-      </select>
-     </div>
-     <div class="field form-full"><label for="evtNote">공지사항 (선택)</label><input type="text" id="evtNote" placeholder="예: 사서쌤 출장으로 방과후 불가"></div>
-    </div>
-    <div class="btn-row">
-     <button class="btn" id="btnClear">초기화</button>
-     <button class="btn primary" id="addBtn">+ 일정 추가</button>
-    </div>
-    <hr class="divider">
-    <div class="panel-title">📣 공지사항 관리</div>
-    <div class="form-grid">
-     <div class="field form-full"><label for="noticeText">공지사항 내용</label><input type="text" id="noticeText" placeholder="예: 사서쌤 출장으로 방과후 불가"></div>
-     <div class="field"><label for="noticeDate">적용 날짜</label><input type="date" id="noticeDate"></div>
-    </div>
-    <div class="btn-row">
-     <button class="btn" id="btnNoticeClear">초기화</button>
-     <button class="btn primary" id="btnNoticeAdd">+ 공지 추가</button>
-    </div>
-    <div style="margin-top:12px;max-height:200px;overflow-y:auto;border:1px solid var(--gray-200);border-radius:6px;padding:8px;">
-     <div id="noticeList" style="font-size:12px;"></div>
-    </div>
-    <hr class="divider">
-    <div class="panel-title">🚫 등록 차단 설정</div>
-    <div style="font-size:11px;color:var(--gray-400);margin-bottom:10px;">지정한 날짜+시간 조합은 학생이 일정 등록 불가</div>
-    <div class="form-grid">
-     <div class="field"><label for="blockDate">날짜</label><input type="date" id="blockDate"></div>
-     <div class="field"><label for="blockTime">활동 시간</label>
-      <select id="blockTime">
-       <option value="점심시간">점심시간</option>
-       <option value="">방과후</option>
-       <option value="비대면">비대면</option>
-      </select>
-     </div>
-    </div>
-    <div class="btn-row">
-     <button class="btn primary" id="btnBlockAdd">+ 차단 추가</button>
-    </div>
-    <div style="margin-top:10px;max-height:160px;overflow-y:auto;border:1px solid var(--gray-200);border-radius:6px;padding:8px;">
-     <div id="blockList" style="font-size:12px;"></div>
-    </div>
-    <hr class="divider">
-    <div style="font-size:12px;color:var(--gray-400);margin-bottom:8px;font-weight:500;">🔒 관리자 비밀번호 변경</div>
-    <div class="pw-row">
-     <input type="password" id="newPw1" placeholder="새 비밀번호" style="width:140px;">
-     <input type="password" id="newPw2" placeholder="확인" style="width:140px;">
-     <button class="btn" id="btnChangePw">변경</button>
-    </div>
-   </div>
+   <div id="adminLayout">
+    <!-- 왼쪽: 관리자 패널 -->
+    <div id="adminLeft">
+     <div id="adminPanel">
 
+    <!-- 1행: 팀 등록 + 일정 추가 -->
+    <div class="admin-grid">
+     <div class="admin-grid-item">
+      <div class="panel-title">🏷️ 팀 등록</div>
+      <div class="field" style="margin-bottom:8px;"><label for="teamNameInput">새 팀 이름</label><input type="text" id="teamNameInput" placeholder="예: 사과, 근육도서관"></div>
+      <div class="btn-row" style="margin-top:0;">
+       <button class="btn primary" id="btnTeamAdd">+ 팀 추가</button>
+      </div>
+      <div style="margin-top:10px;max-height:160px;overflow-y:auto;border:1px solid var(--gray-200);border-radius:6px;padding:8px;">
+       <div id="teamList" style="font-size:12px;"></div>
+      </div>
+     </div>
+     <div class="admin-grid-item" style="background:var(--purple-50);border-color:var(--purple-100);">
+      <div class="panel-title">📅 일정 추가</div>
+      <div class="field" style="margin-bottom:8px;">
+       <label for="evtDate">날짜 <span style="font-size:11px;color:var(--gray-400);font-weight:400;">(달력 클릭 또는 직접 입력)</span></label>
+       <input type="date" id="evtDate">
+       <div class="date-chips" id="evtDateChips"></div>
+      </div>
+      <div class="field" style="margin-bottom:8px;"><label for="evtTeam">팀 이름</label>
+       <select id="evtTeam"><option value="">(팀 없음)</option></select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+       <div class="field"><label for="evtTime">활동 시간</label>
+        <select id="evtTime">
+         <option value="점심시간">점심시간</option>
+         <option value="">방과후</option>
+         <option value="비대면">비대면</option>
+        </select>
+       </div>
+       <div class="field"><label for="evtStatus">상태</label>
+        <select id="evtStatus">
+         <option value="예정">예정</option>
+         <option value="완료">완료</option>
+         <option value="변경">변경</option>
+        </select>
+       </div>
+      </div>
+      <div class="field" style="margin-bottom:8px;"><label for="evtNote">공지사항 (선택)</label><input type="text" id="evtNote" placeholder="예: 사서쌤 출장으로 방과후 불가"></div>
+      <div class="btn-row" style="margin-top:0;">
+       <button class="btn" id="btnClear">초기화</button>
+       <button class="btn primary" id="addBtn">+ 일정 추가</button>
+      </div>
+     </div>
+    </div>
+
+    <div style="margin:14px 0 0;"></div>
+
+    <!-- 2행: 공지사항 관리 + 등록 차단 설정 -->
+    <div class="admin-grid">
+     <div class="admin-grid-item" style="background:var(--teal-50);border-color:var(--teal-400);">
+      <div class="panel-title" style="color:var(--teal-800);">📣 공지사항 관리</div>
+      <div class="field" style="margin-bottom:8px;"><label for="noticeText">내용</label><input type="text" id="noticeText" placeholder="예: 사서쌤 출장으로 방과후 불가"></div>
+      <div class="field" style="margin-bottom:8px;"><label for="noticeDate">날짜</label><input type="date" id="noticeDate"></div>
+      <div class="btn-row" style="margin-top:0;">
+       <button class="btn" id="btnNoticeClear">초기화</button>
+       <button class="btn primary" id="btnNoticeAdd">+ 공지 추가</button>
+      </div>
+      <div style="margin-top:10px;max-height:140px;overflow-y:auto;border:1px solid var(--teal-400);border-radius:6px;padding:8px;background:white;">
+       <div id="noticeList" style="font-size:12px;"></div>
+      </div>
+     </div>
+     <div class="admin-grid-item">
+      <div class="panel-title">🚫 등록 차단 설정</div>
+      <div style="font-size:11px;color:var(--gray-400);margin-bottom:8px;">지정한 날짜+시간은 학생 등록 불가</div>
+      <div class="field" style="margin-bottom:8px;"><label for="blockDate">날짜</label><input type="date" id="blockDate"></div>
+      <div class="field" style="margin-bottom:8px;"><label for="blockTime">활동 시간</label>
+       <select id="blockTime">
+        <option value="점심시간">점심시간</option>
+        <option value="">방과후</option>
+        <option value="비대면">비대면</option>
+       </select>
+      </div>
+      <div class="btn-row" style="margin-top:0;">
+       <button class="btn primary" id="btnBlockAdd">+ 차단 추가</button>
+      </div>
+      <div style="margin-top:10px;max-height:140px;overflow-y:auto;border:1px solid var(--gray-200);border-radius:6px;padding:8px;">
+       <div id="blockList" style="font-size:12px;"></div>
+      </div>
+     </div>
+    </div>
+
+    <div style="margin-top:14px;padding:12px 16px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:10px;">
+     <div style="font-size:12px;color:var(--gray-400);margin-bottom:8px;font-weight:500;">🔒 관리자 비밀번호 변경</div>
+     <div class="pw-row">
+      <input type="password" id="newPw1" placeholder="새 비밀번호" style="width:130px;">
+      <input type="password" id="newPw2" placeholder="확인" style="width:130px;">
+      <button class="btn" id="btnChangePw">변경</button>
+     </div>
+    </div>
+
+   </div>
+    </div><!-- /adminPanel -->
+   </div><!-- /adminLeft -->
+
+   <!-- 오른쪽: 통계 + 달력 -->
+   <div id="adminRight">
    <div id="statsRow">
     <div class="stat"><div class="stat-val" id="sTot">0</div><div class="stat-label">이번 달 일정</div></div>
     <div class="stat"><div class="stat-val" id="sDone">0</div><div class="stat-label">완료</div></div>
@@ -441,6 +470,8 @@
     <div class="leg"><span class="leg-dot" style="background:#BA7517"></span>변경</div>
     <div class="leg"><span class="leg-dot" style="background:#E24B4A"></span>공지</div>
    </div>
+   </div><!-- /adminRight -->
+   </div><!-- /adminLayout -->
   </main>
 
 <script>
@@ -588,6 +619,7 @@ function checkPw() {
     $('btnStudent').classList.remove('active');
     $('adminPanel').style.display = 'block';
     $('studentPanel').style.display = 'none';
+    $('adminLayout').style.display = 'grid';
     $('statsRow').style.display = 'grid';
     document.body.classList.add('admin-active');
     setDefaultDate();
@@ -609,6 +641,7 @@ function setMode(m) {
     $('btnAdmin').classList.remove('active');
     $('adminPanel').style.display = 'none';
     $('studentPanel').style.display = 'block';
+    $('adminLayout').style.display = 'block';
     $('statsRow').style.display = 'none';
     $('pwPanel').style.display = 'none';
     document.body.classList.remove('admin-active');
