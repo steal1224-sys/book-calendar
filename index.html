@@ -71,13 +71,13 @@ header{background:var(--purple-900);color:white;padding:0 20px;display:flex;alig
 #tab-event, #tab-setting{overflow-y:auto;}
 
 /* 폼 공통 */
-.section-title{font-size:13px;font-weight:700;color:var(--purple-800);margin-bottom:12px;display:flex;align-items:center;gap:6px;}
-.field{margin-bottom:10px;}
+.section-title{font-size:13px;font-weight:700;color:var(--purple-800);margin-bottom:12px;display:flex;align-items:center;gap:6px;flex-shrink:0;}
+.field{margin-bottom:10px;flex-shrink:0;}
 .field label{font-size:11px;color:var(--gray-400);display:block;margin-bottom:4px;font-weight:500;}
 .field input,.field select,.field textarea{width:100%;padding:8px 10px;font-size:13px;border:1px solid var(--gray-200);border-radius:6px;font-family:inherit;background:var(--gray-50);color:var(--gray-900);}
 .field input:focus,.field select:focus{outline:none;border-color:var(--purple-400);background:white;}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-.btn-row{display:flex;gap:6px;justify-content:flex-end;margin-top:10px;}
+.btn-row{display:flex;gap:6px;justify-content:flex-end;margin-top:10px;flex-shrink:0;}
 .btn{padding:7px 14px;font-size:12px;border-radius:6px;border:1px solid var(--gray-200);background:white;color:var(--gray-700);cursor:pointer;font-family:inherit;font-weight:600;}
 .btn:hover{background:var(--gray-50);}
 .btn.primary{background:var(--purple-600);color:white;border-color:var(--purple-600);}
@@ -102,7 +102,7 @@ header{background:var(--purple-900);color:white;padding:0 20px;display:flex;alig
 .date-chip-del:hover{opacity:1;}
 
 /* 오른쪽 달력 영역 */
-#rightPanel{display:flex;flex-direction:column;overflow:hidden;padding:16px 20px;}
+#rightPanel{display:flex;flex-direction:column;overflow:hidden;padding:16px 20px;height:100%;}
 
 /* 통계 */
 #statsRow{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;flex-shrink:0;}
@@ -126,13 +126,13 @@ header{background:var(--purple-900);color:white;padding:0 20px;display:flex;alig
 #teamFilter{padding:3px 10px;border-radius:99px;font-size:12px;border:1px solid var(--gray-200);background:white;color:var(--gray-700);font-family:inherit;cursor:pointer;}
 
 /* 달력 */
-#calWrap{flex:1;overflow:hidden;display:flex;flex-direction:column;}
+#calWrap{flex:1;overflow:hidden;display:flex;flex-direction:column;min-height:0;}
 .cal-head{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:3px;flex-shrink:0;}
 .ch{text-align:center;font-size:13px;font-weight:600;color:var(--gray-400);padding:3px 0;}
 .ch.sun{color:var(--red-400);}
 .ch.sat{color:#185FA5;}
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;flex:1;}
-.cell{border:1px solid var(--gray-100);border-radius:5px;padding:4px 5px;background:white;overflow:hidden;min-height:0;}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);grid-auto-rows:1fr;gap:2px;flex:1;min-height:0;}
+.cell{border:1px solid var(--gray-100);border-radius:5px;padding:4px 5px;background:white;overflow:hidden;}
 .cell.empty{background:transparent;border-color:transparent;}
 .cell.today{border:2px solid var(--purple-400);}
 .cell.weekend{background:#FAFAF9;}
