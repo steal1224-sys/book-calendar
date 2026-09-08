@@ -533,8 +533,7 @@ function startRealtimeSync() {
     if (val) {
       events = Object.values(val);
     } else {
-      events = SEED_EVENTS.slice();
-      saveEvents();
+      events = [];
     }
     buildCal();
   }, () => setSyncStatus('offline'));
