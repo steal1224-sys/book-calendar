@@ -446,6 +446,7 @@ function startRealtimeSync(){
   },()=>setSyncStatus('offline'));
   onValue(ref(db,'adminPw'),(snap)=>{
     const val=snap.val();if(val)adminPw=val;
+    tryAutoLogin();
   });
   setSyncStatus('online');
 }
@@ -455,6 +456,7 @@ function checkPw(){
   const v=$('pwInput').value;
   if(v===adminPw){
     isLoggedIn=true;
+    localStorage.setItem('adminPw', v);
     $('pwWall').style.display='none';
     const ac=$('adminContent');ac.style.display='flex';
     setDefaultDates();
@@ -466,8 +468,21 @@ function checkPw(){
     $('pwInput').value='';
   }
 }
+function tryAutoLogin(){
+  const saved=localStorage.getItem('adminPw');
+  if(saved&&saved===adminPw){
+    isLoggedIn=true;
+    $('pwWall').style.display='none';
+    const ac=$('adminContent');ac.style.display='flex';
+    setDefaultDates();
+    buildCal();buildStats();
+    buildTeamList();updateTeamSelects();
+    buildNoticeList();buildBlockList();
+  }
+}
 function logout(){
   isLoggedIn=false;
+  localStorage.removeItem('adminPw');
   $('adminContent').style.display='none';
   $('pwWall').style.display='flex';
   $('pwInput').value='';
